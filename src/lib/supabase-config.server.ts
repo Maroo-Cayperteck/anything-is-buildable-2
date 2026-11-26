@@ -20,14 +20,10 @@ function normalizeHost(rawUrl: string | undefined): string | null {
 function readVitePublicEnv(
   key: "VITE_SUPABASE_URL" | "VITE_SUPABASE_PUBLISHABLE_KEY",
 ): string | undefined {
-  const fromProcess = process.env[key]?.trim();
-  if (fromProcess) return fromProcess;
-  try {
-    const metaEnv = import.meta.env as Record<string, string | undefined> | undefined;
-    return metaEnv?.[key]?.trim() || undefined;
-  } catch {
-    return undefined;
-  }
+  const value = key === "VITE_SUPABASE_URL"
+    ? import.meta.env?.["VITE_SUPABASE_URL"]
+    : import.meta.env?.["VITE_SUPABASE_PUBLISHABLE_KEY"];
+  return (typeof value === "string" ? value.trim() : undefined) || process.env[key]?.trim();
 }
 
 export function validateServerSupabaseConfig(options?: { requireServiceRole?: boolean }) {

@@ -21,7 +21,7 @@ function classifyAuthError(err: unknown): string {
   const lower = msg.toLowerCase();
 
   if (lower.includes("config_error") || lower.includes("missing supabase environment variable")) {
-    return "إعدادات الاتصال بقاعدة البيانات والمصادقة غير مكتملة على الخادم.";
+    return "تعذر التحقق من الرقم الجامعي تلقائيًا. يرجى التأكد من تسجيل وتفعيل الحساب أولاً بالأسفل، أو الدخول بالبريد الإلكتروني.";
   }
   if (lower.includes("rate_limit") || lower.includes("too many requests")) {
     return "تم تجاوز عدد محاولات تسجيل الدخول المسموح بها؛ يرجى المحاولة بعد دقيقة.";
@@ -169,28 +169,34 @@ export async function portalSignIn(
         data: { identifier: trimmedIdentifier, password: rawPassword },
       });
 
-      if (!proxyRes.ok) {
-        if (proxyRes.reason === "email_not_confirmed") {
+      if (proxyRes) {
+        if (!proxyRes.ok) {
+          if (proxyRes.reason === "email_not_confirmed") {
+            return {
+              error:
+                "يرجى تأكيد بريدك الإلكتروني عبر رابط التفعيل المرسل إلى بريدك قبل تسجيل الدخول.",
+              role: null,
+            };
+          }
+          if (proxyRes.reason === "rate_limited") {
+            return { error: "تم تجاوز عدد محاولات تسجيل الدخول؛ يرجى الانتظار قليلًا.", role: null };
+          }
           return {
             error:
-              "يرجى تأكيد بريدك الإلكتروني عبر رابط التفعيل المرسل إلى بريدك قبل تسجيل الدخول.",
+              "بيانات الدخول غير صحيحة أو الحساب غير مسجل بعد. اضغط بالأسفل على (تفعيل / تسجيل حساب طالب جديد).",
             role: null,
           };
         }
-        if (proxyRes.reason === "rate_limited") {
-          return { error: "تم تجاوز عدد محاولات تسجيل الدخول؛ يرجى الانتظار قليلًا.", role: null };
-        }
-        return { error: "بيانات الدخول غير صحيحة", role: null };
-      }
 
-      const { data: setData, error: setErr } = await supabase.auth.setSession({
-        access_token: proxyRes.accessToken,
-        refresh_token: proxyRes.refreshToken,
-      });
-      if (setErr) {
-        return { error: "تعذر تثبيت جلسة المصادقة في المتصفح", role: null };
+        const { data: setData, error: setErr } = await supabase.auth.setSession({
+          access_token: proxyRes.accessToken,
+          refresh_token: proxyRes.refreshToken,
+        });
+        if (setErr) {
+          return { error: "تعذر تثبيت جلسة المصادقة في المتصفح", role: null };
+        }
+        signedInUserId = setData.user?.id ?? setData.session?.user?.id;
       }
-      signedInUserId = setData.user?.id ?? setData.session?.user?.id;
     }
   } catch (err) {
     return { error: classifyAuthError(err), role: null };
@@ -317,7 +323,9 @@ export function useRoleGate(required: Role) {
       if (event === "SIGNED_OUT") {
         if (active) setState({ status: "denied", session: null });
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
-        verifyAuth(session);
+        // Supabase invokes this callback while holding its auth lock.
+        // Defer requests that call getUser/getSession until the callback returns.
+        window.setTimeout(() => { if (active) void verifyAuth(session); }, 0);
       }
     });
 

@@ -21,9 +21,8 @@ function isSchemaCompatError(
 
 /**
  * Unauthenticated rate-limited sign-in helper for Student Code or Admin username identifiers.
- * Uses the resolve_login_email SECURITY DEFINER RPC (callable with anon key) to look up
- * the email from student_code/username, then authenticates with the publishable-key client.
- * No service role key required — works on Lovable, Vercel, and local deployments.
+ * Uses a service-role-only lookup RPC and authenticates with an ephemeral public client.
+ * Requires the server-only Supabase secret for username/student-code lookup.
  */
 export const signInWithIdentifier = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
@@ -46,93 +45,20 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
       ? normalizeEmail(cleanIdentifier)
       : null;
 
-    if (!resolvedEmail && serviceRoleKey) {
+    if (!resolvedEmail) {
+      if (!serviceRoleKey) {
+        throw new Error("CONFIG_ERROR: إعدادات تسجيل الدخول على الخادم غير مكتملة.");
+      }
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: profileMatch, error: profErr } = await supabaseAdmin
-        .from("student_profiles")
-        .select("user_id, email")
-        .or(`student_code.eq.${cleanIdentifier},username.eq.${cleanIdentifier}`)
-        .limit(1)
-        .maybeSingle();
-
-      if (profErr) {
-        console.error("[auth] student_profiles lookup failed", { code: profErr.code });
-        throw new Error("AUTH_LOOKUP_ERROR: تعذر التحقق من بيانات الحساب على الخادم");
-      }
-
-      if (profileMatch?.email) {
-        resolvedEmail = normalizeEmail(profileMatch.email);
-      } else if (profileMatch?.user_id) {
-        const { data: authLookup } = await supabaseAdmin.auth.admin.getUserById(
-          profileMatch.user_id,
-        );
-        if (authLookup?.user?.email) {
-          resolvedEmail = normalizeEmail(authLookup.user.email);
-        }
-      }
-
-      if (!resolvedEmail) {
-        const { data: reqMatch, error: reqErr } = await supabaseAdmin
-          .from("registration_requests")
-          .select("email")
-          .eq("student_code", cleanIdentifier)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (reqErr && !isSchemaCompatError(reqErr, "registration_requests")) {
-          console.error("[auth] registration_requests lookup failed", { code: reqErr.code });
-          throw new Error("AUTH_LOOKUP_ERROR: تعذر التحقق من بيانات الطلب");
-        }
-        if (reqMatch?.email) {
-          resolvedEmail = normalizeEmail(reqMatch.email);
-        }
-      }
-
-      if (!resolvedEmail) {
-        const { data: rosterMatch, error: rosterErr } = await supabaseAdmin
-          .from("student_roster")
-          .select("approved_email")
-          .eq("student_code", cleanIdentifier)
-          .eq("is_active", true)
-          .maybeSingle();
-
-        if (rosterErr && !isSchemaCompatError(rosterErr, "student_roster")) {
-          console.error("[auth] student_roster lookup failed", { code: rosterErr.code });
-          throw new Error("AUTH_LOOKUP_ERROR: تعذر التحقق من سجل المؤهلين");
-        }
-        if (rosterMatch?.approved_email) {
-          resolvedEmail = normalizeEmail(rosterMatch.approved_email);
-        }
-      }
-    }
-
-    if (!resolvedEmail && !serviceRoleKey) {
-      // Server-side RPC fallback only when SUPABASE_SERVICE_ROLE_KEY is absent; resolvedEmail stays on the server.
-      const anonLookupClient = createEphemeralPublishableClient();
-      const { data: rpcEmail, error: rpcErr } = await anonLookupClient.rpc("resolve_login_email", {
+      // This RPC is restricted to service_role; never expose email lookup to browsers.
+      const { data: email, error } = await supabaseAdmin.rpc("resolve_login_email", {
         p_identifier: cleanIdentifier.toLowerCase(),
       });
-
-      if (rpcErr) {
-        if (
-          rpcErr.code === "42883" ||
-          rpcErr.code === "PGRST202" ||
-          (rpcErr.message ?? "").toLowerCase().includes("does not exist")
-        ) {
-          console.warn("[auth] resolve_login_email RPC not found, returning invalid_credentials");
-          return { ok: false as const, reason: "invalid_credentials" as const };
-        }
-        console.error("[auth] resolve_login_email RPC failed", {
-          code: rpcErr.code,
-          msg: rpcErr.message,
-        });
+      if (error) {
+        console.error("[auth] identifier lookup failed", { code: error.code });
         throw new Error("AUTH_LOOKUP_ERROR: تعذر التحقق من بيانات الحساب");
       }
-
-      if (rpcEmail && typeof rpcEmail === "string" && rpcEmail.length > 0) {
-        resolvedEmail = normalizeEmail(rpcEmail);
-      }
+      if (typeof email === "string" && email) resolvedEmail = normalizeEmail(email);
     }
 
     if (!resolvedEmail) {

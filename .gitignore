@@ -35,3 +35,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Deployment output and local launchers
+.vercel/
+*.exe
