@@ -1,3 +1,4 @@
+import {AdminPlanning} from "@/components/portal/AdminPlanning";
 import {ScheduleRequests} from "@/components/portal/ScheduleAdmin";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -222,6 +223,7 @@ function AdminStudentsIndex() {
 
   return (
     <div className="space-y-6">
+      <AdminPlanning/>
       <ScheduleRequests/>
       <div className="flex flex-wrap gap-2">
         <Button
@@ -234,7 +236,7 @@ function AdminStudentsIndex() {
           variant={tab === "requests" ? "brand" : "outline"}
           onClick={() => setTab("requests")}
         >
-          <UserCheck className="h-4 w-4" /> طلبات التفعيل ({pendingCount} معلق)
+          <UserCheck className="h-4 w-4" /> طلبات قديمة ({pendingCount} معلق)
         </Button>
         <Button variant={tab === "roster" ? "brand" : "outline"} onClick={() => setTab("roster")}>
           <ClipboardList className="h-4 w-4" /> كشف الطلاب المؤهلين ({roster.length})

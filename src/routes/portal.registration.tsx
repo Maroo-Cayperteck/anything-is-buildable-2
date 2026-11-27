@@ -1,199 +1,145 @@
-import {ScheduleTools} from "@/components/portal/ScheduleTools";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { AlertCircle, CalendarDays, Loader2 } from "lucide-react";
-import { Card } from "@/components/portal/Shell";
 import { Button } from "@/components/ui/button";
-import { DAYS, KIND_LABEL, type SlotKind } from "@/lib/portal-data";
 import { usePortalSnapshot } from "@/lib/use-profile";
-import { cn } from "@/lib/utils";
-
+import { DAYS, KIND_LABEL } from "@/lib/portal-data";
+import { overlappingSlots } from "@/lib/schedule-utils";
+import { PersonalPlanner } from "@/components/portal/PersonalPlanner";
+import { ScheduleTools } from "@/components/portal/ScheduleTools";
+import { LectureReminders } from "@/components/portal/LectureReminders";
 export const Route = createFileRoute("/portal/registration")({
-  head: () => ({
-    meta: [
-      { title: "التسجيل الأكاديمي — بوابة الطالب" },
-      { name: "description", content: "التسجيل الأكاديمي والجدول الأسبوعي المشتق من المجموعات المسجل بها الطالب." },
-    ],
-  }),
   component: Registration,
+  head: () => ({ meta: [{ title: "جدولي وموادي — بوابة الطالب" }] }),
 });
-
-const KIND_CLS: Record<SlotKind, string> = {
-  lecture: "bg-lecture text-primary-foreground",
-  section: "bg-section text-foreground",
-  lab: "bg-lab text-foreground",
-};
-
-function computeScheduleBounds(slots: { startMinutes: number; endMinutes: number }[]) {
-  if (slots.length === 0) return { startHour: 8, endHour: 18 };
-  const minMin = Math.min(...slots.map((s) => s.startMinutes));
-  const maxMin = Math.max(...slots.map((s) => s.endMinutes));
-  const startHour = Math.max(0, Math.min(8, Math.floor(minMin / 60)));
-  const endHour = Math.min(24, Math.max(18, Math.ceil(maxMin / 60)));
-  return { startHour, endHour };
-}
-
 function Registration() {
-  const [semesterId, setSemesterId] = useState<string | undefined>(undefined);
+  const [semesterId, setSemester] = useState<string>(),
+    [base, setBase] = useState(false);
   const { data: snap, isLoading, isError, refetch } = usePortalSnapshot(semesterId);
-
-  if (isLoading) {
+  if (isLoading) return <p>جارٍ تجهيز جدولك…</p>;
+  if (isError || !snap)
     return (
-      <div className="grid h-64 place-items-center text-muted-foreground">
-        <Loader2 className="h-6 w-6 animate-spin" />
+      <div>
+        <p>تعذر تحميل جدولك</p>
+        <Button onClick={() => refetch()}>إعادة المحاولة</Button>
       </div>
     );
-  }
-  if (isError || !snap) {
-    return (
-      <div className="space-y-4 rounded-xl border bg-card p-8 text-center">
-        <p className="text-destructive">تعذر تحميل بيانات التسجيل والجدول الدراسي.</p>
-        <Button variant="outline" onClick={() => refetch()}>
-          إعادة المحاولة
-        </Button>
-      </div>
-    );
-  }
-
-  const p = snap.profile;
-  const initial = p.full_name_ar[0] || "ط";
-  const enrollments = snap.enrollments;
-  const timetable = snap.timetable;
-  const distinctGroups = [...new Set(enrollments.map((e) => e.groupName).filter(Boolean))];
-  const { startHour, endHour } = computeScheduleBounds(timetable);
-  const hours = Array.from({ length: Math.max(1, endHour - startHour) }, (_, i) => startHour + i);
-  const totalMinutes = (endHour - startHour) * 60;
-
+  const slots = base ? snap.baseTimetable : snap.timetable;
+  const conflicts = overlappingSlots(slots);
+  const missing = snap.enrollments.filter((e) => !e.lectures.length);
   return (
-    <div className="space-y-6">
-      <ScheduleTools snap={snap}/>
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning-soft px-5 py-4 text-sm text-warning">
-        <div className="flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 shrink-0" />
-          يُدار التسجيل وتوزيع المجموعات مركزيًا من إدارة شؤون الطلاب.
+    <div className="space-y-5">
+      <div className="flex flex-wrap justify-between gap-3 items-center">
+        <div>
+          <h2 className="font-bold text-2xl">جدولي وموادي</h2>
+          <p className="text-sm text-muted-foreground">
+            جدولك الشخصي يتغير فورًا، والجدول الأساسي متاح دائمًا للمقارنة.
+          </p>
         </div>
-        {snap.semesters.length > 0 && (
+        <label>
+          الفصل
           <select
             aria-label="اختيار الفصل الدراسي"
-            className="rounded-lg border bg-card px-3 py-1 text-foreground"
+            className="block w-full border rounded-lg p-2"
             value={semesterId ?? snap.selectedSemester?.id ?? ""}
-            onChange={(e) => setSemesterId(e.target.value || undefined)}
+            onChange={(e) => setSemester(e.target.value)}
           >
             {snap.semesters.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.name_ar} {s.is_current ? "(الحالي)" : ""}
+                {s.academic_years?.name} — {s.name_ar}
               </option>
             ))}
           </select>
-        )}
+        </label>
       </div>
-
-      <section className="overflow-hidden rounded-xl border bg-card shadow-card">
-        <div className="flex flex-wrap items-center gap-4 border-b p-5">
-          <div className="grid h-12 w-12 place-items-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
-            {initial}
+      <PersonalPlanner snap={snap} />
+      <section className="rounded-xl border bg-card p-4 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h3 className="font-bold text-lg">الجدول الأسبوعي</h3>
+          <div className="flex gap-2">
+            <Button variant={!base ? "brand" : "outline"} onClick={() => setBase(false)}>
+              جدولي الشخصي
+            </Button>
+            <Button variant={base ? "brand" : "outline"} onClick={() => setBase(true)}>
+              الأساسي لتوزيعي
+            </Button>
           </div>
-          <div>
-            <div className="font-semibold">{p.full_name_ar}</div>
-            <div className="text-sm text-muted-foreground">
-              الرقم الجامعي: <span className="font-mono">{p.student_code || "—"}</span>
-              {p.cgpa != null ? ` · المعدل: ${Number(p.cgpa).toFixed(2)}` : ""}
-            </div>
-          </div>
-          <span className="mr-auto rounded-full bg-success-soft px-3 py-1 text-xs font-semibold text-success">
-            {p.academic_status || "التسجيل معتمد"}
-          </span>
         </div>
-        <div className="flex flex-wrap gap-8 bg-muted/50 px-6 py-4">
-          {[
-            ["المقررات المسجلة", enrollments.length, "text-foreground"],
-            ["الفصل الدراسي", snap.selectedSemester?.name_ar ?? "—", "text-primary"],
-            ["المجموعات", distinctGroups.length > 0 ? distinctGroups.join(" / ") : "—", "text-foreground"],
-          ].map(([l, v, c]) => (
-            <div key={l as string}>
-              <div className="label-caps">{l}</div>
-              <div className={cn("mt-1 font-mono font-bold", c as string)} dir="ltr">
-                {v}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <Card
-        title="الجدول الأسبوعي"
-        icon={CalendarDays}
-        action={
-          <div className="flex gap-3 text-xs">
-            {(Object.keys(KIND_LABEL) as SlotKind[]).map((k) => (
-              <span key={k} className="flex items-center gap-1.5">
-                <span className={cn("h-3 w-3 rounded-sm", KIND_CLS[k])} /> {KIND_LABEL[k]}
-              </span>
-            ))}
-          </div>
-        }
-      >
-        {timetable.length === 0 ? (
-          <p className="py-10 text-center text-sm text-muted-foreground">
-            لا توجد حصص مجدولة في هذا الفصل الدراسي بعد.
+        {base && (
+          <p className="text-sm text-muted-foreground mb-3">
+            مواعيد مجموعاتك المختارة من الجدول الأساسي قبل تعديلات المواعيد الشخصية.
+          </p>
+        )}
+        {!!missing.length && (
+          <p className="rounded-lg bg-warning-soft p-3 text-sm mb-3">
+            مواعيد غير مكتملة: {missing.map((e) => e.courseCode).join("، ")}. حدّد توزيعك أو راجع
+            الجدول الأساسي؛ لن نخترع مواعيد غير منشورة.
+          </p>
+        )}
+        {!!conflicts.length && (
+          <p role="alert" className="text-destructive text-sm mb-3">
+            يوجد {conflicts.length} تعارض في هذا الجدول. تستطيع حفظ اختياراتك ومراجعة الأوقات بنفسك.
+          </p>
+        )}
+        {!slots.length ? (
+          <p className="py-5 text-muted-foreground">
+            اختَر موادك وتوزيعك بالأعلى لعرض المواعيد. ويمكنك تصفح الجدول الأساسي الكامل حتى لو لا
+            تعرف مجموعتك.
           </p>
         ) : (
-          <div className="-m-6 overflow-x-auto">
-            <div className="min-w-[960px] text-xs" dir="ltr">
-              <div className="grid border-b bg-muted/60" style={{ gridTemplateColumns: `96px repeat(${hours.length}, minmax(72px, 1fr))` }}>
-                <div className="p-3 text-center font-semibold">اليوم</div>
-                {hours.map((h) => (
-                  <div key={h} className="border-l p-3 text-center font-semibold">
-                    {String(h).padStart(2, "0")}:00
-                  </div>
-                ))}
+          <div className="grid gap-4 lg:grid-cols-3">
+            {DAYS.filter(([day]) => slots.some((s) => s.day === day)).map(([day, name]) => (
+              <div key={day} className="rounded-xl border overflow-hidden">
+                <h4 className="font-bold bg-muted p-3">{name}</h4>
+                <div className="divide-y">
+                  {slots
+                    .filter((s) => s.day === day)
+                    .map((s) => (
+                      <article key={s.id} className="p-3">
+                        <p className="font-bold" dir="auto">
+                          {s.courseCode} — {s.course}
+                        </p>
+                        <p className="text-sm mt-1">
+                          {s.startTime}–{s.endTime} · {s.room}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {KIND_LABEL[s.kind]} · {s.groupName}
+                        </p>
+                        {s.isPersonal && (
+                          <span className="text-xs text-primary">
+                            موعد شخصي معدّل · الأساسي {s.original.startTime}–{s.original.endTime}
+                          </span>
+                        )}
+                      </article>
+                    ))}
+                </div>
               </div>
-              <div className="divide-y">
-                {DAYS.map(([day, ar]) => {
-                  const slots = timetable.filter((s) => s.day === day);
-                  return (
-                    <div key={day} className="flex min-h-20 items-stretch">
-                      <div className="flex w-24 shrink-0 items-center justify-center bg-muted/40 p-3 text-center font-semibold">
-                        {ar}
-                      </div>
-                      <div className="relative flex-1 border-l">
-                        <div className="grid h-full" style={{ gridTemplateColumns: `repeat(${hours.length}, minmax(72px, 1fr))` }}>
-                          {hours.map((h) => (
-                            <div key={h} className="min-h-20 border-l first:border-l-0" />
-                          ))}
-                        </div>
-                        {slots.map((s) => {
-                          const leftPct = Math.max(0, ((s.startMinutes - startHour * 60) / totalMinutes) * 100);
-                          const widthPct = Math.max(4, ((s.endMinutes - s.startMinutes) / totalMinutes) * 100);
-                          return (
-                            <div
-                              key={s.id}
-                              style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
-                              className="absolute inset-y-1 p-0.5"
-                            >
-                              <div className={cn("h-full overflow-hidden rounded-md p-2 leading-tight shadow-xs", KIND_CLS[s.kind])}>
-                                <div className="truncate font-semibold">
-                                  {KIND_LABEL[s.kind]} · {s.course}
-                                </div>
-                                <div className="mt-0.5 truncate font-mono text-[0.7rem] opacity-90">
-                                  {s.startTime}–{s.endTime}
-                                </div>
-                                <div className="truncate opacity-80">
-                                  {s.staff} · {s.room} ({s.groupName})
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            ))}
           </div>
         )}
-      </Card>
+      </section>
+      {!!snap.exceptions.length && (
+        <section className="rounded-xl bg-warning-soft p-4">
+          <h3 className="font-bold">إلغاءات وتعويضات بتاريخ محدد</h3>
+          {snap.exceptions.map((e) => (
+            <p className="text-sm mt-2" key={e.id}>
+              {snap.timetable.find((s) => s.id === e.slot_id)?.courseCode} · {e.occurrence_date} ·{" "}
+              {e.cancelled
+                ? "إلغاء هذا اليوم"
+                : `تعويض ${e.replacement_date} ${e.start_time?.slice(0, 5)}–${e.end_time?.slice(0, 5)}`}{" "}
+              · {e.note}
+            </p>
+          ))}
+        </section>
+      )}
+      <LectureReminders snap={snap} />
+      <details className="rounded-xl border bg-card p-4">
+        <summary className="font-bold cursor-pointer">
+          تعديل موعد شخصي أو إرسال ملاحظة للمسؤول
+        </summary>
+        <div className="mt-4">
+          <ScheduleTools snap={snap} />
+        </div>
+      </details>
     </div>
   );
 }

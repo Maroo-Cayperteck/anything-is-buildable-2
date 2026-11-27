@@ -45,6 +45,7 @@ function Info() {
 
   return (
     <div className="space-y-6">
+      {p.academic_status === "في الانتظار" && <p className="rounded-xl bg-info-soft p-4">بياناتك الأكاديمية الرسمية في الانتظار. يمكنك استخدام الجدول والمواد والملفات العامة الآن.</p>}
       <div className="flex items-center gap-6 rounded-2xl bg-hero p-8 text-primary-foreground shadow-elevated">
         <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full border-2 border-primary-foreground/30 bg-primary-foreground/10 text-2xl font-bold">
           {initials}

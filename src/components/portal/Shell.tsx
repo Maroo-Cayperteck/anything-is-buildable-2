@@ -26,9 +26,10 @@ import { cn } from "@/lib/utils";
 export type NavItem = { to: string; label: string; icon: LucideIcon };
 
 export const STUDENT_NAV: NavItem[] = [
-  { to: "/portal", label: "لوحة التحكم", icon: LayoutDashboard },
+  { to: "/user-guide.html", label: "دليل الاستخدام", icon: BookOpen },
+  { to: "/portal", label: "يومي الدراسي", icon: LayoutDashboard },
   { to: "/portal/info", label: "بيانات الطالب", icon: UserRound },
-  { to: "/portal/registration", label: "التسجيل الأكاديمي", icon: ClipboardList },
+  { to: "/portal/registration", label: "جدولي وموادي", icon: ClipboardList },
   { to: "/portal/courses", label: "المقررات الدراسية", icon: BookOpen },
   { to: "/portal/grades", label: "النتائج والمعدل التراكمي", icon: BarChart3 },
   { to: "/portal/documents", label: "تحميل ملفات الطالب", icon: FileDown },
@@ -36,6 +37,7 @@ export const STUDENT_NAV: NavItem[] = [
 ];
 
 export const ADMIN_NAV: NavItem[] = [
+  { to: "/user-guide.html", label: "دليل الاستخدام", icon: BookOpen },
   { to: "/admin", label: "نظرة عامة", icon: LayoutDashboard },
   { to: "/admin/students", label: "الطلاب والتسجيل", icon: Users },
   { to: "/admin/academic", label: "الشؤون الأكاديمية", icon: BookOpen },
@@ -127,7 +129,8 @@ export function Shell({
     navigate({ to: signOutTo, replace: true });
   }
 
-  const isActive = (to: string) => (to === "/portal" || to === "/admin" ? path === to : path.startsWith(to));
+  const isActive = (to: string) =>
+    to === "/portal" || to === "/admin" ? path === to : path.startsWith(to);
   // Display only the first letter of the user's name
   const initial = userName.trim().split(/\s+/)[0]?.[0] || userName.trim()[0] || "ع";
 
@@ -189,6 +192,7 @@ export function Shell({
                 <Link
                   key={item.to}
                   to={item.to}
+                  reloadDocument={item.to.endsWith(".html")}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
                     "relative flex items-center gap-3 rounded-lg px-4 py-3 text-sm transition-colors",
@@ -199,7 +203,9 @@ export function Shell({
                 >
                   <item.icon className={cn("h-5 w-5", active && "text-gold")} />
                   {item.label}
-                  {active && <span className="absolute inset-y-2 left-0 w-1 rounded-full bg-gold" />}
+                  {active && (
+                    <span className="absolute inset-y-2 left-0 w-1 rounded-full bg-gold" />
+                  )}
                 </Link>
               );
             })}
@@ -249,7 +255,9 @@ export function Shell({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 hover:text-primary transition-colors font-medium"
           >
-            <span>جامعة حلوان الأهلية — Helwan National University © {new Date().getFullYear()}</span>
+            <span>
+              جامعة حلوان الأهلية — Helwan National University © {new Date().getFullYear()}
+            </span>
           </a>
         </footer>
       </div>
@@ -257,7 +265,19 @@ export function Shell({
   );
 }
 
-export function Card({ title, icon: Icon, action, children, className }: { title?: string; icon?: LucideIcon; action?: ReactNode; children: ReactNode; className?: string }) {
+export function Card({
+  title,
+  icon: Icon,
+  action,
+  children,
+  className,
+}: {
+  title?: string;
+  icon?: LucideIcon;
+  action?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <section className={cn("overflow-hidden rounded-xl border bg-card shadow-card", className)}>
       {title && (
@@ -272,11 +292,21 @@ export function Card({ title, icon: Icon, action, children, className }: { title
   );
 }
 
-export function Field({ label, value, mono }: { label: string; value?: ReactNode; mono?: boolean }) {
+export function Field({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value?: ReactNode;
+  mono?: boolean;
+}) {
   return (
     <div>
       <div className="label-caps">{label}</div>
-      <div className={cn("mt-1.5 text-[0.95rem]", mono && "font-mono font-semibold")}>{value || "—"}</div>
+      <div className={cn("mt-1.5 text-[0.95rem]", mono && "font-mono font-semibold")}>
+        {value || "—"}
+      </div>
     </div>
   );
 }
@@ -295,8 +325,22 @@ export function SampleBadge() {
 }
 
 export function GradePill({ grade }: { grade: string }) {
-  const tone = grade.startsWith("A") || grade.startsWith("B") ? "bg-info-soft text-primary" : grade === "F" ? "bg-destructive/10 text-destructive" : "bg-warning-soft text-warning";
-  return <span className={cn("inline-grid h-7 min-w-7 place-items-center rounded-full px-2 text-xs font-bold", tone)}>{grade}</span>;
+  const tone =
+    grade.startsWith("A") || grade.startsWith("B")
+      ? "bg-info-soft text-primary"
+      : grade === "F"
+        ? "bg-destructive/10 text-destructive"
+        : "bg-warning-soft text-warning";
+  return (
+    <span
+      className={cn(
+        "inline-grid h-7 min-w-7 place-items-center rounded-full px-2 text-xs font-bold",
+        tone,
+      )}
+    >
+      {grade}
+    </span>
+  );
 }
 
 export function FullLoader() {
@@ -320,7 +364,12 @@ export function StatCard({
   sub?: string | undefined;
   tone?: "info" | "gold" | "success" | "danger";
 }) {
-  const toneCls = { info: "bg-info-soft text-primary", gold: "bg-gold-soft text-warning", success: "bg-success-soft text-success", danger: "bg-destructive/10 text-danger" }[tone];
+  const toneCls = {
+    info: "bg-info-soft text-primary",
+    gold: "bg-gold-soft text-warning",
+    success: "bg-success-soft text-success",
+    danger: "bg-destructive/10 text-danger",
+  }[tone];
   return (
     <div className="flex items-center gap-4 rounded-xl border bg-card p-5 shadow-card transition-transform hover:-translate-y-0.5">
       <div className={cn("grid h-12 w-12 place-items-center rounded-xl", toneCls)}>
@@ -335,4 +384,3 @@ export function StatCard({
     </div>
   );
 }
-

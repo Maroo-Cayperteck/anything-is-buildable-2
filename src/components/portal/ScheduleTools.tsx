@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,84 +14,20 @@ type Snapshot = NonNullable<ReturnType<typeof usePortalSnapshot>["data"]>;
 export function ScheduleTools({ snap }: { snap: Snapshot }) {
   const qc = useQueryClient(),
     [editing, setEditing] = useState(""),
-    [enabled, setEnabled] = useState(false),
     [busy, setBusy] = useState(false);
   const requests = useQuery({
     queryKey: ["my-schedule-requests"],
     queryFn: () => getMyScheduleChanges(),
     refetchInterval: 60000,
   });
-  useEffect(() => {
-    setEnabled(localStorage.getItem("lecture-reminders") === "yes");
-  }, []);
-  useEffect(() => {
-    if (!enabled) return;
-    const tick = () => {
-      const now = new Date();
-      const parts = new Intl.DateTimeFormat("en-US", {
-        timeZone: "Africa/Cairo",
-        weekday: "long",
-        hour: "2-digit",
-        minute: "2-digit",
-        hourCycle: "h23",
-      }).formatToParts(now);
-      const get = (key: string) => parts.find((p) => p.type === key)?.value ?? "";
-      const minute = Number(get("hour")) * 60 + Number(get("minute"));
-      const near = snap.timetable.find(
-        (x) =>
-          x.day === get("weekday") && x.startMinutes - minute > 0 && x.startMinutes - minute <= 10,
-      );
-      if (!near) return;
-      const key =
-        "lecture-reminded:" +
-        snap.profile.user_id +
-        ":" +
-        now.toISOString().slice(0, 10) +
-        ":" +
-        near.id;
-      if (localStorage.getItem(key)) return;
-      localStorage.setItem(key, "yes");
-      toast.info(`بعد ${near.startMinutes - minute} دقائق: ${near.course} — ${near.room}`);
-      if ("Notification" in window && Notification.permission === "granted") {
-        try {
-          new Notification("المحاضرة القادمة", {
-            body: `${near.course} — ${near.startTime} — ${near.room}`,
-          });
-        } catch {
-          /* in-app reminder remains available */
-        }
-      }
-    };
-    tick();
-    const timer = window.setInterval(tick, 30000);
-    return () => clearInterval(timer);
-  }, [enabled, snap]);
   const conflicts = overlappingSlots(snap.timetable);
   const slot = snap.timetable.find((x) => x.id === editing);
   return (
     <section className="space-y-4 rounded-xl border bg-card p-4 sm:p-6">
-      <h2 className="font-bold text-lg">جدولي وطلبات التعديل</h2>
+      <h2 className="font-bold text-lg">تخصيص المواعيد والملاحظات</h2>
       <p className="text-sm text-muted-foreground">
-        التعديل الشخصي ينظّم عرض جدولك فقط، ولا يغيّر موعد المحاضرة الفعلي أو تسجيلك الرسمي. أرسل
-        طلبًا للمسؤول لتغيير المجموعة أو المواد.
-      </p>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant="outline"
-          onClick={async () => {
-            const next = !enabled;
-            if (next && "Notification" in window && Notification.permission === "default")
-              await Notification.requestPermission();
-            setEnabled(next);
-            localStorage.setItem("lecture-reminders", next ? "yes" : "no");
-          }}
-        >
-          {enabled ? "إيقاف تذكير المحاضرات" : "تفعيل تذكير قبل المحاضرة بـ10 دقائق"}
-        </Button>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        التذكير يعمل والصفحة مفتوحة، حسب توقيت القاهرة. إشعارات النظام تعتمد على دعم المتصفح والسماح
-        بها؛ لا تصل بعد إغلاق الموقع.
+        غيّر مواعيد نسختك بحرية، أو ارجع للموعد الأساسي. لتغيير الجروب أو السيكشن تلقائيًا استخدم
+        اختيار موادي بالأعلى. تعديلك لا يغير جداول الآخرين.
       </p>
       {conflicts.length > 0 && (
         <p role="alert" className="text-destructive">
@@ -229,7 +165,7 @@ export function ScheduleTools({ snap }: { snap: Snapshot }) {
                 }
               }}
             >
-              الرجوع للموعد المعتمد
+              الرجوع للموعد الأساسي
             </Button>
           </div>
         </form>
@@ -255,9 +191,9 @@ export function ScheduleTools({ snap }: { snap: Snapshot }) {
         }}
       >
         <label className="block">
-          طلب تعديل رسمي
+          ملاحظة أو طلب مساعدة
           <textarea
-            aria-label="طلب تعديل رسمي"
+            aria-label="ملاحظة أو طلب مساعدة"
             name="message"
             placeholder="اكتب المادة والجروب أو الموعد المطلوب وسبب التعديل"
             className="block w-full border rounded-lg p-3 mt-1"

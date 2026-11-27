@@ -76,7 +76,14 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
     }
 
     const semesters = semRes.data ?? [];
-    const enrollments = enrRes.data ?? [];
+    let enrollments = enrRes.data ?? [];
+    const { readPlanItems } = await import("./planning-utils");
+    const { data: myPlans, error: planError } = await db
+      .from("personal_plans")
+      .select("*")
+      .eq("student_user_id", student.user_id)
+      .order("updated_at", { ascending: false });
+    if (planError) throw new Error("تعذر تحميل خطتك الشخصية");
     const announcements = annRes.data ?? [];
     const events = evRes.data ?? [];
     const grades = gradeRes.data ?? [];
@@ -84,10 +91,37 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
 
     const selectedSemester =
       (data?.semesterId ? semesters.find((s) => s.id === data.semesterId) : undefined) ??
+      semesters.find((s) => s.id === myPlans?.[0]?.semester_id) ??
       semesters.find((s) => s.is_current) ??
       semesters[0] ??
       null;
 
+    const personalPlan = myPlans?.find((p) => p.semester_id === selectedSemester?.id);
+    if (personalPlan) {
+      const { data: semesterOfferings, error: soe } = await db
+        .from("course_offerings")
+        .select("id")
+        .eq("semester_id", personalPlan.semester_id);
+      if (soe) throw new Error("تعذر تحميل الفصل");
+      const ids = new Set(semesterOfferings.map((o) => o.id));
+      enrollments = enrollments.filter((e) => !ids.has(e.offering_id));
+      enrollments.push(
+        ...readPlanItems(personalPlan.items)
+          .filter((x) => x.offeringId)
+          .map((x) => ({
+            id: x.offeringId!,
+            offering_id: x.offeringId!,
+            group_id: "00000000-0000-0000-0000-000000000000",
+            student_user_id: student.user_id,
+            status: "enrolled",
+            group_number: x.group_number,
+            section_number: x.section_number,
+            lab_number: x.lab_number,
+            created_at: personalPlan.updated_at,
+            updated_at: personalPlan.updated_at,
+          })),
+      );
+    }
     // Resolve enrolled courses, offerings, groups, and lectures under RLS
     const offeringIds = [...new Set(enrollments.map((e) => e.offering_id))];
     const groupIds = [...new Set(enrollments.map((e) => e.group_id))];
@@ -120,7 +154,11 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
     const { matchesChoice } = await import("./schedule-utils");
     const [slotRes, overrideRes] = await Promise.all([
       offeringIds.length
-        ? db.from("schedule_slots").select("*").in("offering_id", offeringIds)
+        ? db
+            .from("schedule_slots")
+            .select("*")
+            .eq("is_deleted", false)
+            .in("offering_id", offeringIds)
         : Promise.resolve({ data: [], error: null }),
       db.from("schedule_overrides").select("*").eq("student_user_id", student.user_id),
     ]);
@@ -154,7 +192,7 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
         const sem = off ? semesterMap.get(off.semester_id) : undefined;
         const templateSlots = baseSlots.filter((l) => l.offering_id === e.offering_id);
         const grpLectures = (
-          e.group_number
+          e.group_number || e.group_id === "00000000-0000-0000-0000-000000000000"
             ? templateSlots
                 .filter((l) => matchesChoice(l, e))
                 .map((l) => ({
@@ -180,6 +218,12 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
                   end_hour: Number(change.end_time.slice(0, 2)),
                 }
               : {}),
+            original: {
+              day: l.day_of_week,
+              startTime: formatTimeDisplay(l.start_time, l.start_hour),
+              endTime: formatTimeDisplay(l.end_time, l.end_hour),
+              room: l.location,
+            },
             isPersonal: !!personal,
             isAdminOverride: !!adminOverride,
           };
@@ -196,7 +240,12 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
           courseNameAr: crs?.name_ar ?? null,
           creditHours: crs?.credit_hours ?? 0,
           groupId: grp?.id ?? e.group_id,
-          groupName: grp?.name ?? "",
+          groupName:
+            grp?.name ??
+            `جروب ${e.group_number ?? "؟"} / سيكشن ${e.section_number ?? "؟"} / لاب ${e.lab_number ?? "؟"}`,
+          group_number: e.group_number,
+          section_number: e.section_number,
+          lab_number: e.lab_number,
           instructor: grp?.instructor ?? null,
           lectures: grpLectures,
         };
@@ -209,6 +258,7 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
         const endTime = formatTimeDisplay(lec.end_time, lec.end_hour);
         return {
           id: lec.id,
+          original: lec.original,
           isPersonal: lec.isPersonal,
           isAdminOverride: lec.isAdminOverride,
           day: lec.day_of_week,
@@ -228,11 +278,41 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
       }),
     );
 
-    const weekdayOrder = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-    timetableSlots.sort((a, b) =>
-      weekdayOrder.indexOf(a.day) - weekdayOrder.indexOf(b.day) ||
-      a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes,
+    const weekdayOrder = [
+      "Saturday",
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+    ];
+    timetableSlots.sort(
+      (a, b) =>
+        weekdayOrder.indexOf(a.day) - weekdayOrder.indexOf(b.day) ||
+        a.startMinutes - b.startMinutes ||
+        a.endMinutes - b.endMinutes,
     );
+    const baseTimetable = timetableSlots
+      .map((s) => ({
+        ...s,
+        ...s.original,
+        startMinutes: parseTimeToMinutes(s.original.startTime, s.start),
+        endMinutes: parseTimeToMinutes(s.original.endTime, s.end),
+        isPersonal: false,
+        isAdminOverride: false,
+      }))
+      .sort(
+        (a, b) =>
+          weekdayOrder.indexOf(a.day) - weekdayOrder.indexOf(b.day) ||
+          a.startMinutes - b.startMinutes,
+      );
+    const [{ data: exceptions, error: exError }, { data: personalEvents, error: evError }] =
+      await Promise.all([
+        db.from("schedule_exceptions").select("*"),
+        db.from("personal_events").select("*").eq("student_user_id", student.user_id),
+      ]);
+    if (exError || evError) throw new Error("تعذر تحميل تغييرات اليوم");
     const targetedAnnouncements = announcements.filter((a) => matchesStudentAudience(a, student));
     const targetedEvents = events.filter((ev) => matchesStudentAudience(ev, student));
 
@@ -263,6 +343,10 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
       selectedSemester,
       enrollments: activeEnrollments,
       timetable: timetableSlots,
+      baseTimetable,
+      personalPlan: !!personalPlan,
+      exceptions: (exceptions ?? []).filter((e) => timetableSlots.some((s) => s.id === e.slot_id)),
+      personalEvents: personalEvents ?? [],
       announcements: targetedAnnouncements,
       events: targetedEvents,
       grades: publishedGrades,

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-const time = z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/);
+import { validTime as time, readPlanItems } from "./planning-utils";
 const day = z.enum(["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"]);
 const slotFields = {
   day_of_week: day,
@@ -16,7 +16,7 @@ export const getScheduleAdminData = createServerFn({ method: "GET" })
     await requireAdminServer(context.userId);
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     const [slots, requests, overrides] = await Promise.all([
-      db.from("schedule_slots").select("*"),
+      db.from("schedule_slots").select("*").eq("is_deleted", false),
       db
         .from("schedule_requests")
         .select("*, student_profiles(full_name_ar,student_code)")
@@ -33,6 +33,7 @@ export const saveScheduleSlot = createServerFn({ method: "POST" })
     z
       .object({
         id: z.string().uuid().optional(),
+        expectedVersion: z.number().int().optional(),
         offering_id: z.string().uuid(),
         ...slotFields,
         kind: z.enum(["lecture", "section", "lab"]),
@@ -48,9 +49,14 @@ export const saveScheduleSlot = createServerFn({ method: "POST" })
     const { requireAdminServer, logAdminActivity } = await import("./auth.server");
     await requireAdminServer(context.userId);
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-    const { id, ...values } = data;
+    const { id, expectedVersion, ...values } = data;
     const { error } = data.id
-      ? await db.from("schedule_slots").update(values).eq("id", data.id)
+      ? await db.rpc("change_schedule_slot", {
+          p_actor: context.userId,
+          p_id: data.id,
+          p_expected: expectedVersion ?? 0,
+          p_values: values,
+        })
       : await db.from("schedule_slots").insert({ ...values, source: "admin" });
     if (error) throw new Error(error.message);
     await logAdminActivity({
@@ -68,7 +74,17 @@ export const deleteScheduleSlot = createServerFn({ method: "POST" })
     const { requireAdminServer } = await import("./auth.server");
     await requireAdminServer(context.userId);
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-    const { error } = await db.from("schedule_slots").delete().eq("id", data.id);
+    const { data: slot } = await db
+      .from("schedule_slots")
+      .select("version")
+      .eq("id", data.id)
+      .single();
+    const { error } = await db.rpc("change_schedule_slot", {
+      p_actor: context.userId,
+      p_id: data.id,
+      p_expected: slot?.version ?? 0,
+      p_values: { is_deleted: true },
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -196,8 +212,19 @@ export const saveScheduleOverride = createServerFn({ method: "POST" })
       db.from("schedule_slots").select("*").eq("id", data.slotId).maybeSingle(),
       db.from("lectures").select("*").eq("id", data.slotId).maybeSingle(),
     ]);
+    const { data: plans, error: planError } = await db
+      .from("personal_plans")
+      .select("items,semester_id")
+      .eq("student_user_id", studentId);
+    if (planError) throw new Error("تعذر قراءة الخطة الشخصية");
+    const personalMatch =
+      slot &&
+      (plans ?? []).some((p) =>
+        readPlanItems(p.items).some((x) => x.offeringId === slot.offering_id),
+      );
     const { matchesChoice } = await import("./schedule-utils");
     if (
+      !personalMatch &&
       !enrollments?.some((e) =>
         slot
           ? e.offering_id === slot.offering_id && matchesChoice(slot, e)
@@ -210,21 +237,19 @@ export const saveScheduleOverride = createServerFn({ method: "POST" })
           .from("schedule_overrides")
           .delete()
           .match({ student_user_id: studentId, slot_id: data.slotId, scope })
-      : await db
-          .from("schedule_overrides")
-          .upsert(
-            {
-              student_user_id: studentId,
-              slot_id: data.slotId,
-              scope,
-              day_of_week: data.day_of_week,
-              start_time: data.start_time,
-              end_time: data.end_time,
-              location: data.location,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "student_user_id,slot_id,scope" },
-          );
+      : await db.from("schedule_overrides").upsert(
+          {
+            student_user_id: studentId,
+            slot_id: data.slotId,
+            scope,
+            day_of_week: data.day_of_week,
+            start_time: data.start_time,
+            end_time: data.end_time,
+            location: data.location,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "student_user_id,slot_id,scope" },
+        );
     if (result.error) throw new Error("تعذر حفظ الموعد");
     return { ok: true };
   });

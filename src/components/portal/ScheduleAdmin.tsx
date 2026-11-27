@@ -1,3 +1,4 @@
+import { getScheduleImpact } from "@/lib/planning.functions";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -92,6 +93,11 @@ export function ScheduleAdmin() {
   const qc = useQueryClient(),
     [off, setOff] = useState(""),
     [edit, setEdit] = useState("");
+  const [preview, setPreview] = useState<{
+    fingerprint: string;
+    count: number;
+    version: number;
+  } | null>(null);
   const q = useQuery({ queryKey: ["schedule-admin"], queryFn: () => getScheduleAdminData() });
   const cat = useQuery({
     queryKey: ["admin-academic-catalog"],
@@ -134,9 +140,16 @@ export function ScheduleAdmin() {
             const f = new FormData(e.currentTarget);
             const num = (k: string) => (f.get(k) ? Number(f.get(k)) : null);
             try {
+              const fingerprint = JSON.stringify([...f.entries()]) + edit;
+              if (edit && preview?.fingerprint !== fingerprint) {
+                const impact = await getScheduleImpact({ data: { slotId: edit } });
+                setPreview({ ...impact, fingerprint });
+                return;
+              }
               await saveScheduleSlot({
                 data: {
                   id: edit || undefined,
+                  expectedVersion: preview?.version,
                   offering_id: current,
                   day_of_week: String(f.get("day")) as "Saturday",
                   start_time: String(f.get("start")),
@@ -150,13 +163,20 @@ export function ScheduleAdmin() {
                 },
               });
               setEdit("");
-              await qc.invalidateQueries({ queryKey: ["schedule-admin"] });
+              setPreview(null);
+              await qc.invalidateQueries();
               toast.success("حُفظ الموعد الأساسي");
             } catch (err) {
               toast.error(err instanceof Error ? err.message : "تعذر الحفظ");
             }
           }}
         >
+          {preview && edit && (
+            <p role="status" className="rounded-lg bg-warning-soft p-3">
+              هذا التعديل مرتبط بـ{preview.count} طالب. راجع اليوم والوقت والمجموعة ثم اضغط الحفظ
+              مرة ثانية للتأكيد. يمكنك التراجع من سجل التعديلات.
+            </p>
+          )}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <label>
               اليوم

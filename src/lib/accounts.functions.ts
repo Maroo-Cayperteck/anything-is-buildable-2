@@ -97,7 +97,7 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
     };
   });
 
-// Student-code registration creates a confirmed internal Auth identity; approval remains mandatory.
+// Open registration: authentication grants planning access, not verified academic claims.
 export const registerWithStudentCode = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
@@ -119,6 +119,9 @@ export const registerWithStudentCode = createServerFn({ method: "POST" })
           .regex(/[\u0621-\u064A]/, "اكتب الاسم بالعربية"),
         level: z.number().int().min(0).max(3),
         term: z.number().int().min(1).max(2),
+        group: z.number().int().min(1).max(20).nullable().default(null),
+        section: z.number().int().min(1).max(30).nullable().default(null),
+        lab: z.number().int().min(1).max(30).nullable().default(null),
       })
       .parse(d),
   )
@@ -146,7 +149,7 @@ export const registerWithStudentCode = createServerFn({ method: "POST" })
     if (pe || re || ro) throw new Error("تعذر التحقق من الرقم الجامعي. حاول لاحقًا.");
     if (profile || request?.length)
       throw new Error("يوجد حساب أو طلب بهذا الرقم. سجّل الدخول أو راجع المسؤول.");
-    if (roster && !roster.is_active) throw new Error("راجع المسؤول لتفعيل أهلية الرقم الجامعي.");
+
     const email = `student${data.studentCode}@hnu-portal.example.com`;
     const { data: created, error } = await db.auth.admin.createUser({
       email,
@@ -155,21 +158,24 @@ export const registerWithStudentCode = createServerFn({ method: "POST" })
     });
     if (error || !created.user)
       throw new Error("تعذر إنشاء الحساب؛ قد يكون الرقم مسجلًا بالفعل. راجع المسؤول.");
-    const { error: insertError } = await db
-      .from("registration_requests")
-      .insert({
-        auth_user_id: created.user.id,
-        student_code: data.studentCode,
-        email,
-        full_name_ar: data.fullNameAr,
-        status: "pending",
-        requested_level: data.level,
-        requested_term: data.term,
-        roster_verified: false,
+    try {
+      const { error: setupError } = await db.rpc("create_open_student", {
+        p_user: created.user.id,
+        p_code: data.studentCode,
+        p_name: data.fullNameAr,
+        p_level: data.level,
+        p_term: data.term,
       });
-    if (insertError) {
+      if (setupError) throw new Error("تعذر تجهيز ملف الطالب");
+      const { initializeStudentPlan } = await import("./planning.server");
+      await initializeStudentPlan(created.user.id, data.level, data.term, {
+        group_number: data.group,
+        section_number: data.section,
+        lab_number: data.lab,
+      });
+    } catch (error) {
       await db.auth.admin.deleteUser(created.user.id);
-      throw new Error("تعذر حفظ الطلب. حاول مرة أخرى.");
+      throw error;
     }
     return { ok: true };
   });

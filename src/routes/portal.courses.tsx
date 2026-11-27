@@ -42,7 +42,7 @@ function Courses() {
 
   return (
     <Card
-      title={`المقررات المسجلة (${enrollments.length})`}
+      title={`مواد خطتي (${enrollments.length})`}
       icon={BookOpen}
       action={
         snap.semesters.length > 0 ? (

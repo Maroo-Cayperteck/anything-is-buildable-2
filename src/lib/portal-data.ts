@@ -53,6 +53,7 @@ export function portalSnapshotQuery(semesterId?: string) {
     queryKey: ["portal-snapshot", semesterId ?? "current"],
     queryFn: () => getStudentPortalSnapshot({ data: semesterId ? { semesterId } : {} }),
     staleTime: 15_000,
+    refetchInterval: 60_000,
   });
 }
 

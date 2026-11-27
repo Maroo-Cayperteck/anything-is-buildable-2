@@ -633,6 +633,135 @@ export type Database = {
           },
         ]
       }
+      personal_events: {
+        Row: {
+          end_time: string
+          event_date: string
+          id: string
+          note: string
+          start_time: string
+          student_user_id: string
+          title: string
+        }
+        Insert: {
+          end_time: string
+          event_date: string
+          id?: string
+          note?: string
+          start_time: string
+          student_user_id: string
+          title: string
+        }
+        Update: {
+          end_time?: string
+          event_date?: string
+          id?: string
+          note?: string
+          start_time?: string
+          student_user_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_events_student_user_id_fkey"
+            columns: ["student_user_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      personal_plans: {
+        Row: {
+          items: Json
+          level_id: string
+          semester_id: string
+          student_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          items?: Json
+          level_id: string
+          semester_id: string
+          student_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          items?: Json
+          level_id?: string
+          semester_id?: string
+          student_user_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_plans_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "academic_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personal_plans_semester_id_fkey"
+            columns: ["semester_id"]
+            isOneToOne: false
+            referencedRelation: "semesters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personal_plans_student_user_id_fkey"
+            columns: ["student_user_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      planning_roster: {
+        Row: {
+          group_number: number | null
+          lab_number: number | null
+          level_id: string
+          section_number: number | null
+          semester_id: string
+          student_code: string
+          updated_at: string
+        }
+        Insert: {
+          group_number?: number | null
+          lab_number?: number | null
+          level_id: string
+          section_number?: number | null
+          semester_id: string
+          student_code: string
+          updated_at?: string
+        }
+        Update: {
+          group_number?: number | null
+          lab_number?: number | null
+          level_id?: string
+          section_number?: number | null
+          semester_id?: string
+          student_code?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planning_roster_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "academic_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planning_roster_semester_id_fkey"
+            columns: ["semester_id"]
+            isOneToOne: false
+            referencedRelation: "semesters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       registration_intents: {
         Row: {
           consumed_at: string | null
@@ -757,6 +886,91 @@ export type Database = {
           },
         ]
       }
+      schedule_exceptions: {
+        Row: {
+          cancelled: boolean
+          end_time: string | null
+          id: string
+          location: string | null
+          note: string
+          occurrence_date: string
+          replacement_date: string | null
+          slot_id: string
+          start_time: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancelled?: boolean
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          note?: string
+          occurrence_date: string
+          replacement_date?: string | null
+          slot_id: string
+          start_time?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancelled?: boolean
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          note?: string
+          occurrence_date?: string
+          replacement_date?: string | null
+          slot_id?: string
+          start_time?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_exceptions_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "schedule_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedule_history: {
+        Row: {
+          actor_id: string | null
+          after_data: Json
+          before_data: Json
+          created_at: string
+          id: string
+          slot_id: string
+          undone_at: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          after_data: Json
+          before_data: Json
+          created_at?: string
+          id?: string
+          slot_id: string
+          undone_at?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          after_data?: Json
+          before_data?: Json
+          created_at?: string
+          id?: string
+          slot_id?: string
+          undone_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_history_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "schedule_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schedule_overrides: {
         Row: {
           day_of_week: string
@@ -847,6 +1061,7 @@ export type Database = {
           group_number: number | null
           id: string
           instructor: string | null
+          is_deleted: boolean
           kind: Database["public"]["Enums"]["slot_kind"]
           lab_number: number | null
           location: string
@@ -854,6 +1069,7 @@ export type Database = {
           section_number: number | null
           source: string | null
           start_time: string
+          version: number
         }
         Insert: {
           created_at?: string
@@ -862,6 +1078,7 @@ export type Database = {
           group_number?: number | null
           id?: string
           instructor?: string | null
+          is_deleted?: boolean
           kind: Database["public"]["Enums"]["slot_kind"]
           lab_number?: number | null
           location: string
@@ -869,6 +1086,7 @@ export type Database = {
           section_number?: number | null
           source?: string | null
           start_time: string
+          version?: number
         }
         Update: {
           created_at?: string
@@ -877,6 +1095,7 @@ export type Database = {
           group_number?: number | null
           id?: string
           instructor?: string | null
+          is_deleted?: boolean
           kind?: Database["public"]["Enums"]["slot_kind"]
           lab_number?: number | null
           location?: string
@@ -884,6 +1103,7 @@ export type Database = {
           section_number?: number | null
           source?: string | null
           start_time?: string
+          version?: number
         }
         Relationships: [
           {
@@ -1312,36 +1532,36 @@ export type Database = {
         Args: {
           _academic_year_id?: string | null
           _actor_label: string
-          _actor_user_id: string
+          _actor_user_id: string | null
           _level_id?: string | null
           _program_id?: string | null
-          _request_id: string
+          _request_id: string | null
         }
         Returns: Json
       }
       admin_reject_registration_atomic: {
         Args: {
           _actor_label: string
-          _actor_user_id: string
+          _actor_user_id: string | null
           _reason?: string | null
-          _request_id: string
+          _request_id: string | null
         }
         Returns: Json
       }
       admin_set_account_status_atomic: {
         Args: {
           _actor_label: string
-          _actor_user_id: string
+          _actor_user_id: string | null
           _new_status: Database["public"]["Enums"]["account_status"]
           _reason?: string | null
-          _target_user_id: string
+          _target_user_id: string | null
         }
         Returns: Json
       }
       admin_upsert_academic_year_atomic: {
         Args: {
           _actor_label: string
-          _actor_user_id: string
+          _actor_user_id: string | null
           _id: string | null
           _is_current: boolean
           _name: string
@@ -1361,9 +1581,9 @@ export type Database = {
       }
       admin_upsert_semester_atomic: {
         Args: {
-          _academic_year_id: string
+          _academic_year_id: string | null
           _actor_label: string
-          _actor_user_id: string
+          _actor_user_id: string | null
           _id: string | null
           _is_closed: boolean
           _is_current: boolean
@@ -1371,7 +1591,7 @@ export type Database = {
           _season: string
         }
         Returns: {
-          academic_year_id: string
+          academic_year_id: string | null
           created_at: string
           ends_on: string | null
           id: string
@@ -1404,21 +1624,44 @@ export type Database = {
       can_access_audience: {
         Args: {
           _audience: Database["public"]["Enums"]["document_audience"]
-          _level_id: string
-          _program_id: string
-          _target_student_user_id: string
+          _level_id: string | null
+          _program_id: string | null
+          _target_student_user_id: string | null
         }
         Returns: boolean
+      }
+      change_schedule_slot: {
+        Args: {
+          p_actor: string
+          p_expected: number
+          p_id: string | null
+          p_values: Json
+        }
+        Returns: undefined
+      }
+      create_open_student: {
+        Args: {
+          p_code: string
+          p_level: number
+          p_name: string
+          p_term: number
+          p_user: string
+        }
+        Returns: undefined
       }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
+          _user_id: string | null
         }
         Returns: boolean
       }
       is_active_student: { Args: never; Returns: boolean }
       resolve_login_email: { Args: { p_identifier: string }; Returns: string }
+      undo_schedule_slot: {
+        Args: { p_actor: string; p_history: string }
+        Returns: undefined
+      }
     }
     Enums: {
       account_status: "pending" | "active" | "rejected" | "suspended"

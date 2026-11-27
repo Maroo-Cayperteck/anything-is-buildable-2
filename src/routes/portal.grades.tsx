@@ -70,6 +70,7 @@ function Grades() {
 
   return (
     <div className="space-y-6">
+      {p.cgpa == null && <p className="rounded-xl bg-info-soft p-4">المعدل والبيانات الرسمية في الانتظار لحين إدخالها من المسؤول. يمكنك استخدام جدولك وموادك الآن.</p>}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={Award}

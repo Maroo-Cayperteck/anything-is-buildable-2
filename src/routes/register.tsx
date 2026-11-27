@@ -1,12 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { CheckCircle2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BrandMark } from "@/components/portal/Shell";
 import { registerWithStudentCode } from "@/lib/accounts.functions";
+import { portalSignIn } from "@/lib/session";
 export const Route = createFileRoute("/register")({ ssr: false, component: Register });
 function Register() {
+  const navigate = useNavigate();
   const [busy, setBusy] = useState(false),
     [done, setDone] = useState(false),
     [error, setError] = useState("");
@@ -17,16 +19,16 @@ function Register() {
           <BrandMark className="mx-auto h-16 w-16" />
           <h1 className="text-2xl font-bold mt-5">حساب طالب جديد</h1>
           <p className="text-sm text-muted-foreground mt-2">
-            رقمك الجامعي وكلمة مرور تختارها. التفعيل بعد مراجعة المسؤول، بدون بريد إلكتروني.
+            رقمك الجامعي وكلمة مرور تختارها. دخول فوري بدون بريد أو انتظار موافقة.
           </p>
         </div>
         {done ? (
           <div className="text-center space-y-4 mt-8">
             <CheckCircle2 className="mx-auto text-success" />
-            <h2>تم إرسال طلبك للمراجعة</h2>
+            <h2>تم إنشاء حسابك</h2>
             <p>
-              بعد الموافقة، ادخل بنفس الرقم الجامعي وكلمة المرور. المسؤول يراجع المستوى والمواد
-              ويحدد جدولك.
+              ادخل بنفس الرقم الجامعي وكلمة المرور. موادك وجدولك جاهزين للتخصيص، والبيانات الرسمية
+              تُستكمل لاحقًا.
             </p>
             <Button asChild variant="brand">
               <Link to="/">تسجيل الدخول</Link>
@@ -52,11 +54,16 @@ function Register() {
                     fullNameAr: String(f.get("name")),
                     level: Number(f.get("level")),
                     term: Number(f.get("term")),
+                    group: f.get("group") ? Number(f.get("group")) : null,
+                    section: f.get("section") ? Number(f.get("section")) : null,
+                    lab: f.get("lab") ? Number(f.get("lab")) : null,
                   },
                 });
                 setDone(true);
+                const login = await portalSignIn(String(f.get("code")), String(f.get("password")));
+                if (!login.error) await navigate({ to: "/portal/registration" });
               } catch (err) {
-                setError(err instanceof Error ? err.message : "تعذر إرسال الطلب");
+                setError(err instanceof Error ? err.message : "تعذر إنشاء الحساب");
               } finally {
                 setBusy(false);
               }
@@ -106,7 +113,34 @@ function Register() {
             </div>
             <p className="text-xs text-muted-foreground">
               المستوى حسب اللائحة: Level 0 إعدادي، ثم Level 1 و2 و3. المواد الإلزامية تُقترح
-              تلقائيًا للمسؤول، والاختيارية يحددها عند الاعتماد.
+              تلقائيًا ويمكنك تعديلها وتغيير توزيعك بنفسك.
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                ["group", "الجروب", 3],
+                ["section", "السيكشن", 7],
+                ["lab", "اللاب", 7],
+              ].map(([key, label, max]) => (
+                <label key={String(key)}>
+                  {label}
+                  <select
+                    aria-label={String(label)}
+                    name={String(key)}
+                    className="w-full border rounded-lg p-2"
+                  >
+                    <option value="">لا أعرف</option>
+                    {Array.from({ length: Number(max) }, (_, i) => (
+                      <option key={i} value={i + 1}>
+                        {i + 1}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              لو مش عارف توزيعك، شاهد الجدول الأساسي بعد الدخول وحدده لاحقًا. لن نفترض مجموعة بدلًا
+              منك.
             </p>
             <label className="block">
               كلمة المرور
@@ -140,7 +174,7 @@ function Register() {
             )}
             <Button variant="brand" className="w-full min-h-12" disabled={busy}>
               <UserPlus className="h-4 w-4" />
-              {busy ? "جارٍ الإرسال…" : "إرسال طلب التسجيل"}
+              {busy ? "جارٍ الإرسال…" : "إنشاء حساب وفتح جدولي"}
             </Button>
             <p className="text-xs text-muted-foreground">
               نسيت كلمة المرور؟ تواصل مع المسؤول لإعادة تعيينها بعد التحقق من هويتك.

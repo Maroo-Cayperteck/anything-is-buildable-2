@@ -39,3 +39,6 @@ dist-ssr
 # Deployment output and local launchers
 .vercel/
 *.exe
+
+# Supabase local CLI cache
+supabase/.temp/
