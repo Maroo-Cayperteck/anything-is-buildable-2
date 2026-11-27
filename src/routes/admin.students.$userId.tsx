@@ -1,3 +1,4 @@
+import {SmartPlan} from "@/components/portal/SmartPlan";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -227,6 +228,7 @@ function AdminStudentDetail() {
 
   return (
     <div className="space-y-6">
+      <SmartPlan userId={userId}/>
       <div className="flex flex-wrap items-center gap-3">
         <Button asChild variant="ghost" size="sm">
           <Link to="/admin/students">

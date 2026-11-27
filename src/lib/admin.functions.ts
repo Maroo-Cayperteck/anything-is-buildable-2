@@ -679,7 +679,7 @@ export const adminUpsertLevel = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid().optional(),
         program_id: z.string().uuid(),
-        level_number: z.number().int().min(1).max(10),
+        level_number: z.number().int().min(0).max(10),
         name_ar: z.string().trim().min(2).max(120),
       })
       .parse(d),

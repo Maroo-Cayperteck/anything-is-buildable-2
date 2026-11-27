@@ -1,0 +1,841 @@
+{
+  "courses": [
+    {
+      "code": "GEN111",
+      "name": "Mathematics (1)",
+      "hours": 3,
+      "level": 0,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 1
+    },
+    {
+      "code": "GEN121",
+      "name": "Physics (1)",
+      "hours": 3,
+      "level": 0,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 1
+    },
+    {
+      "code": "POW111",
+      "name": "Electrical Circuits",
+      "hours": 3,
+      "level": 0,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 1
+    },
+    {
+      "code": "MEC131",
+      "name": "Engineering Drawing",
+      "hours": 3,
+      "level": 0,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 1
+    },
+    {
+      "code": "CSE111",
+      "name": "Computer Techniques",
+      "hours": 2,
+      "level": 0,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 1
+    },
+    {
+      "code": "GEN151",
+      "name": "English Language",
+      "hours": 2,
+      "level": 0,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 1
+    },
+    {
+      "code": "GEN152",
+      "name": "Communication and Presentation Skills",
+      "hours": 2,
+      "level": 0,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 1
+    },
+    {
+      "code": "GEN112",
+      "name": "Mathematics (2)",
+      "hours": 3,
+      "level": 0,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "GEN111",
+      "page": 1
+    },
+    {
+      "code": "GEN122",
+      "name": "Physics (2)",
+      "hours": 3,
+      "level": 0,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "GEN121",
+      "page": 1
+    },
+    {
+      "code": "GEN113",
+      "name": "Statistics and Probability Theory",
+      "hours": 2,
+      "level": 0,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 1
+    },
+    {
+      "code": "CSE121",
+      "name": "Computer Programming",
+      "hours": 3,
+      "level": 0,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "CSE111",
+      "page": 1
+    },
+    {
+      "code": "ECE181",
+      "name": "Fundamentals of Cybersecurity",
+      "hours": 3,
+      "level": 0,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 1
+    },
+    {
+      "code": "GEN211",
+      "name": "Discrete Mathematics",
+      "hours": 3,
+      "level": 1,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "GEN112",
+      "page": 2
+    },
+    {
+      "code": "ECE211",
+      "name": "Electronic Devices and Circuits",
+      "hours": 3,
+      "level": 1,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 2
+    },
+    {
+      "code": "ECE221",
+      "name": "Signals and Systems",
+      "hours": 3,
+      "level": 1,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "GEN111",
+      "page": 2
+    },
+    {
+      "code": "CSE221",
+      "name": "Data Structures and Algorithms",
+      "hours": 3,
+      "level": 1,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "CSE121",
+      "page": 2
+    },
+    {
+      "code": "CSE222",
+      "name": "Information Systems and Databases",
+      "hours": 2,
+      "level": 1,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "CSE121",
+      "page": 2
+    },
+    {
+      "code": "ECE281",
+      "name": "Cyber Laws, Ethics and Privacy",
+      "hours": 2,
+      "level": 1,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 2
+    },
+    {
+      "code": "GEN212",
+      "name": "Numerical Methods",
+      "hours": 3,
+      "level": 1,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "GEN112",
+      "page": 2
+    },
+    {
+      "code": "CSE223",
+      "name": "Software Engineering",
+      "hours": 3,
+      "level": 1,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "CSE121",
+      "page": 2
+    },
+    {
+      "code": "ECE212",
+      "name": "Logic Circuits Design",
+      "hours": 3,
+      "level": 1,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 2
+    },
+    {
+      "code": "ECE222",
+      "name": "Communication Systems",
+      "hours": 3,
+      "level": 1,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "ECE221",
+      "page": 2
+    },
+    {
+      "code": "CSE211",
+      "name": "Computer Architecture and Organization",
+      "hours": 2,
+      "level": 1,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 2
+    },
+    {
+      "code": "ECE321",
+      "name": "Information Theory and Coding",
+      "hours": 2,
+      "level": 2,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "GEN113",
+      "page": 2
+    },
+    {
+      "code": "ECE371",
+      "name": "Data Communication Networks",
+      "hours": 3,
+      "level": 2,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "ECE222",
+      "page": 2
+    },
+    {
+      "code": "ECE331",
+      "name": "Micro-Processors and Micro- Controllers",
+      "hours": 3,
+      "level": 2,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "ECE212",
+      "page": 2
+    },
+    {
+      "code": "CSE321",
+      "name": "Operating Systems",
+      "hours": 3,
+      "level": 2,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "CSE121",
+      "page": 2
+    },
+    {
+      "code": "CSE322",
+      "name": "Web Design and Development",
+      "hours": 3,
+      "level": 2,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "CSE121",
+      "page": 3
+    },
+    {
+      "code": "CSE323",
+      "name": "Mobile Software Development",
+      "hours": 2,
+      "level": 2,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "CSE121",
+      "page": 3
+    },
+    {
+      "code": "ECE381",
+      "name": "Cryptography and Information Security",
+      "hours": 3,
+      "level": 2,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "GEN211 and ECE321",
+      "page": 3
+    },
+    {
+      "code": "ECE372",
+      "name": "Computer Networks",
+      "hours": 3,
+      "level": 2,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "ECE371",
+      "page": 3
+    },
+    {
+      "code": "ECE332",
+      "name": "Embedded Systems",
+      "hours": 3,
+      "level": 2,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "ECE331",
+      "page": 3
+    },
+    {
+      "code": "CSE331",
+      "name": "Artificial Intelligence",
+      "hours": 3,
+      "level": 2,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 3
+    },
+    {
+      "code": "CSE351",
+      "name": "Cloud and Fog Computing",
+      "hours": 3,
+      "level": 2,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "CSE321",
+      "page": 3
+    },
+    {
+      "code": "CSE341",
+      "name": "Secure Software Design",
+      "hours": 3,
+      "level": 2,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "CSE121",
+      "page": 3
+    },
+    {
+      "code": "ECE471",
+      "name": "Wireless Communication Networks",
+      "hours": 3,
+      "level": 3,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "ECE222",
+      "page": 3
+    },
+    {
+      "code": "ECE481",
+      "name": "Security Operations and Incident Response",
+      "hours": 3,
+      "level": 3,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "ECE181",
+      "page": 3
+    },
+    {
+      "code": "ECE482",
+      "name": "Digital Forensics",
+      "hours": 3,
+      "level": 3,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "ECE381 and CSE321",
+      "page": 3
+    },
+    {
+      "code": "ECE491",
+      "name": "Graduation Project (1)",
+      "hours": 3,
+      "level": 3,
+      "term": 1,
+      "pool": null,
+      "prerequisites": "-",
+      "page": 3
+    },
+    {
+      "code": "ECE483",
+      "name": "Vulnerability Assessment and Penetration Analysis",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "ECE181",
+      "page": 4
+    },
+    {
+      "code": "ECE484",
+      "name": "Cyber Security Risk Management",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "ECE481",
+      "page": 4
+    },
+    {
+      "code": "ECE485",
+      "name": "Secure Networks Design",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "ECE381 and ECE372",
+      "page": 4
+    },
+    {
+      "code": "ECE492",
+      "name": "Graduation Project (2)",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": null,
+      "prerequisites": "ECE491",
+      "page": 4
+    },
+    {
+      "code": "GEN153",
+      "name": "German Language",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of HNU Elective (1), HNU Elective (2) and HNU Elective (3) Courses",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "GEN154",
+      "name": "Italian Language",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of HNU Elective (1), HNU Elective (2) and HNU Elective (3) Courses",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "GEN155",
+      "name": "Academic Reading and Writing",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of HNU Elective (1), HNU Elective (2) and HNU Elective (3) Courses",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "GEN251",
+      "name": "Problem Solving and Decision-making Skills",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of HNU Elective (1), HNU Elective (2) and HNU Elective (3) Courses",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "GEN252",
+      "name": "Legislations Professional Ethics",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of HNU Elective (1), HNU Elective (2) and HNU Elective (3) Courses",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "GEN253",
+      "name": "Heritage and Culture",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of HNU Elective (1), HNU Elective (2) and HNU Elective (3) Courses",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "GEN254",
+      "name": "Critical Thinking",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of HNU Elective (1), HNU Elective (2) and HNU Elective (3) Courses",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "ECE231",
+      "name": "Foundations of Digital Technology",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of HNU Elective (1), HNU Elective (2) and HNU Elective (3) Courses",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "GEN261",
+      "name": "Innovation and Entrepreneurship",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of HNU Elective (1), HNU Elective (2) and HNU Elective (3) Courses",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "GEN262",
+      "name": "Economics and Business Administration",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of HNU Elective (1), HNU Elective (2) and HNU Elective (3) Courses",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "GEN263",
+      "name": "Introduction to Marketing",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of HNU Elective (1), HNU Elective (2) and HNU Elective (3) Courses",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "GEN264",
+      "name": "Sustainable Development",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of HNU Elective (1), HNU Elective (2) and HNU Elective (3) Courses",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "GEN123",
+      "name": "Quantum Physics",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of Elective Courses in Applied Natural Sciences",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "GEN141",
+      "name": "Industrial Chemistry and Materials",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of Elective Courses in Applied Natural Sciences",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "MEC141",
+      "name": "Environmental Studies",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of Elective Courses in Applied Natural Sciences",
+      "prerequisites": "-",
+      "page": 4
+    },
+    {
+      "code": "ECE213",
+      "name": "Electronic Measurements and Sensors",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of Engineering Measurements and Modelling Elective Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "CSE224",
+      "name": "Algorithms Design and Analysis",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of Engineering Measurements and Modelling Elective Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "ECE373",
+      "name": "IT Projects Management",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of Elective Courses in Project Managment and Engineering Economy",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "CSE324",
+      "name": "Software Project Management",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of Elective Courses in Project Managment and Engineering Economy",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "MEC342",
+      "name": "Project Management and Engineering Economics",
+      "hours": 2,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of Elective Courses in Project Managment and Engineering Economy",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "ECE461",
+      "name": "Digital Signal Processing",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (1) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "CSE431",
+      "name": "Data Mining and Machine Learning",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (1) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "CSE471",
+      "name": "Digital Control Systems",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (1) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "CSE451",
+      "name": "Parallel and Distributed Systems",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (1) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "CSE461",
+      "name": "Computer Vision",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (1) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "ECE486",
+      "name": "Penetration Testing and Ethical Hacking",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "ECE487",
+      "name": "Critical Infrastructure Protection",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "ECE488",
+      "name": "Disaster Recovery",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "ECE489",
+      "name": "Industrial Systems Security",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "ECE431",
+      "name": "Cyber Threat Intelligence",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "ECE432",
+      "name": "Hardware Security and Trusted Design",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "ECE461",
+      "name": "Image Forensics",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "ECE472",
+      "name": "IoT and its Security",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "ECE473",
+      "name": "Wireless Network Security",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "ECE474",
+      "name": "Selected topics on Cybersecurity and Networks",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "CSE441",
+      "name": "Malware analysis and Reverse Engineering",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "CSE442",
+      "name": "Blockchain",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "CSE443",
+      "name": "Operating System Security",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "CSE444",
+      "name": "Quantum Computing and Security",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    },
+    {
+      "code": "CSE451",
+      "name": "Cloud Computing Security",
+      "hours": 3,
+      "level": 3,
+      "term": 2,
+      "pool": "Pool of NCSE Elective (2), NCSE Elective (3), NCSE Elective (4) Courses",
+      "prerequisites": "-",
+      "page": 5
+    }
+  ],
+  "notes": [
+    "ECE461 مكرر لمادتين: Digital Signal Processing / Image Forensics",
+    "CSE451 مكرر لمادتين: Parallel and Distributed Systems / Cloud Computing Security",
+    "GENx51 وENG2xx رموز غير مكتملة لمتطلبي قضايا مجتمعية والتدريب الميداني؛ يؤكد المسؤول الأكواد قبل الإضافة",
+    "مواعيد سكاشن ولابات Level 0 غير منشورة في المرجع",
+    "Level 1 / Section 2 مشترك بين الجروبين؛ المحاضرة حسب الجروب والعملي حسب السيكشن/اللاب"
+  ]
+}

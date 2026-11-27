@@ -1,3 +1,4 @@
+import {ScheduleTools} from "@/components/portal/ScheduleTools";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AlertCircle, CalendarDays, Loader2 } from "lucide-react";
@@ -65,6 +66,7 @@ function Registration() {
 
   return (
     <div className="space-y-6">
+      <ScheduleTools snap={snap}/>
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning-soft px-5 py-4 text-sm text-warning">
         <div className="flex items-center gap-3">
           <AlertCircle className="h-5 w-5 shrink-0" />

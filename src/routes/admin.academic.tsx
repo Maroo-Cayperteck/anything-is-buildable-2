@@ -1,3 +1,4 @@
+import {ScheduleAdmin} from "@/components/portal/ScheduleAdmin";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -102,6 +103,7 @@ function AdminAcademicPage() {
 
   return (
     <div className="space-y-6">
+      <ScheduleAdmin/>
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="البرامج والمستويات الأكاديمية" icon={Layers}>
           <form

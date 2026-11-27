@@ -15,55 +15,49 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
 
     const student = await requireActiveStudentServer(context.userId, db);
 
-    const [
-      progRes,
-      lvlRes,
-      yearRes,
-      semRes,
-      enrRes,
-      annRes,
-      evRes,
-      gradeRes,
-      sumRes,
-    ] = await Promise.all([
-      student.program_id
-        ? db.from("academic_programs").select("*").eq("id", student.program_id).maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-      student.level_id
-        ? db.from("academic_levels").select("*").eq("id", student.level_id).maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-      student.academic_year_id
-        ? db.from("academic_years").select("*").eq("id", student.academic_year_id).maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-      db.from("semesters").select("*, academic_years(name)").order("created_at", { ascending: false }),
-      db
-        .from("enrollments")
-        .select("*")
-        .eq("student_user_id", student.user_id)
-        .eq("status", "enrolled"),
-      db
-        .from("announcements")
-        .select("*")
-        .eq("is_published", true)
-        .eq("is_archived", false)
-        .order("published_at", { ascending: false }),
-      db
-        .from("academic_events")
-        .select("*")
-        .eq("is_published", true)
-        .order("starts_at", { ascending: true }),
-      db
-        .from("student_grades")
-        .select("*")
-        .eq("student_user_id", student.user_id)
-        .eq("is_published", true)
-        .order("created_at", { ascending: true }),
-      db
-        .from("semester_grade_summaries")
-        .select("*")
-        .eq("student_user_id", student.user_id)
-        .eq("is_published", true),
-    ]);
+    const [progRes, lvlRes, yearRes, semRes, enrRes, annRes, evRes, gradeRes, sumRes] =
+      await Promise.all([
+        student.program_id
+          ? db.from("academic_programs").select("*").eq("id", student.program_id).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+        student.level_id
+          ? db.from("academic_levels").select("*").eq("id", student.level_id).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+        student.academic_year_id
+          ? db.from("academic_years").select("*").eq("id", student.academic_year_id).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+        db
+          .from("semesters")
+          .select("*, academic_years(name)")
+          .order("created_at", { ascending: false }),
+        db
+          .from("enrollments")
+          .select("*")
+          .eq("student_user_id", student.user_id)
+          .eq("status", "enrolled"),
+        db
+          .from("announcements")
+          .select("*")
+          .eq("is_published", true)
+          .eq("is_archived", false)
+          .order("published_at", { ascending: false }),
+        db
+          .from("academic_events")
+          .select("*")
+          .eq("is_published", true)
+          .order("starts_at", { ascending: true }),
+        db
+          .from("student_grades")
+          .select("*")
+          .eq("student_user_id", student.user_id)
+          .eq("is_published", true)
+          .order("created_at", { ascending: true }),
+        db
+          .from("semester_grade_summaries")
+          .select("*")
+          .eq("student_user_id", student.user_id)
+          .eq("is_published", true),
+      ]);
 
     const firstError =
       progRes.error ||
@@ -106,7 +100,11 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
         ? db.from("academic_groups").select("*").in("id", groupIds)
         : Promise.resolve({ data: [], error: null }),
       groupIds.length > 0
-        ? db.from("lectures").select("*").in("group_id", groupIds).order("start_time", { ascending: true })
+        ? db
+            .from("lectures")
+            .select("*")
+            .in("group_id", groupIds)
+            .order("start_time", { ascending: true })
         : Promise.resolve({ data: [], error: null }),
     ]);
 
@@ -119,8 +117,20 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
     const offerings = offRes.data ?? [];
     const groups = grpRes.data ?? [];
     const lectures = lecRes.data ?? [];
+    const { matchesChoice } = await import("./schedule-utils");
+    const [slotRes, overrideRes] = await Promise.all([
+      offeringIds.length
+        ? db.from("schedule_slots").select("*").in("offering_id", offeringIds)
+        : Promise.resolve({ data: [], error: null }),
+      db.from("schedule_overrides").select("*").eq("student_user_id", student.user_id),
+    ]);
+    if (slotRes.error || overrideRes.error) throw new Error("تعذر تحميل تعديلات الجدول");
+    const baseSlots = slotRes.data ?? [],
+      overrides = overrideRes.data ?? [];
 
-    const courseIds = [...new Set([...offerings.map((o) => o.course_id), ...grades.map((g) => g.course_id)])];
+    const courseIds = [
+      ...new Set([...offerings.map((o) => o.course_id), ...grades.map((g) => g.course_id)]),
+    ];
     const courseRes =
       courseIds.length > 0
         ? await db.from("courses").select("*").in("id", courseIds)
@@ -142,7 +152,38 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
         const grp = groupMap.get(e.group_id);
         const crs = off ? courseMap.get(off.course_id) : undefined;
         const sem = off ? semesterMap.get(off.semester_id) : undefined;
-        const grpLectures = lectures.filter((l) => l.group_id === e.group_id);
+        const templateSlots = baseSlots.filter((l) => l.offering_id === e.offering_id);
+        const grpLectures = (
+          e.group_number
+            ? templateSlots
+                .filter((l) => matchesChoice(l, e))
+                .map((l) => ({
+                  ...l,
+                  group_id: e.group_id,
+                  start_hour: Number(l.start_time.slice(0, 2)),
+                  end_hour: Number(l.end_time.slice(0, 2)),
+                }))
+            : lectures.filter((l) => l.group_id === e.group_id)
+        ).map((l) => {
+          const personal = overrides.find((o) => o.slot_id === l.id && o.scope === "personal");
+          const adminOverride = overrides.find((o) => o.slot_id === l.id && o.scope === "admin");
+          const change = personal ?? adminOverride;
+          return {
+            ...l,
+            ...(change
+              ? {
+                  day_of_week: change.day_of_week,
+                  start_time: change.start_time,
+                  end_time: change.end_time,
+                  location: change.location,
+                  start_hour: Number(change.start_time.slice(0, 2)),
+                  end_hour: Number(change.end_time.slice(0, 2)),
+                }
+              : {}),
+            isPersonal: !!personal,
+            isAdminOverride: !!adminOverride,
+          };
+        });
         return {
           enrollmentId: e.id,
           status: e.status,
@@ -168,6 +209,8 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
         const endTime = formatTimeDisplay(lec.end_time, lec.end_hour);
         return {
           id: lec.id,
+          isPersonal: lec.isPersonal,
+          isAdminOverride: lec.isAdminOverride,
           day: lec.day_of_week,
           start: lec.start_hour,
           end: lec.end_hour,
@@ -198,7 +241,8 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
         creditHours: crs?.credit_hours ?? 0,
         semesterName: sem?.name_ar ?? "—",
         semesterSeason: sem?.season ?? "",
-        academicYearName: (sem as { academic_years?: { name?: string } } | undefined)?.academic_years?.name ?? "",
+        academicYearName:
+          (sem as { academic_years?: { name?: string } } | undefined)?.academic_years?.name ?? "",
       };
     });
 
@@ -229,15 +273,20 @@ export const getStudentDocumentsBundle = createServerFn({ method: "GET" })
 
     const student = await requireActiveStudentServer(context.userId, db);
 
-    const [{ data: sharedDocs, error: sharedErr }, { data: privateDocs, error: privErr }] = await Promise.all([
-      db.from("documents").select("*").eq("is_available", true).order("sort_order", { ascending: true }),
-      db
-        .from("student_documents")
-        .select("*")
-        .eq("student_user_id", student.user_id)
-        .eq("is_available", true)
-        .order("created_at", { ascending: false }),
-    ]);
+    const [{ data: sharedDocs, error: sharedErr }, { data: privateDocs, error: privErr }] =
+      await Promise.all([
+        db
+          .from("documents")
+          .select("*")
+          .eq("is_available", true)
+          .order("sort_order", { ascending: true }),
+        db
+          .from("student_documents")
+          .select("*")
+          .eq("student_user_id", student.user_id)
+          .eq("is_available", true)
+          .order("created_at", { ascending: false }),
+      ]);
 
     if (sharedErr || privErr) {
       const err = sharedErr || privErr;

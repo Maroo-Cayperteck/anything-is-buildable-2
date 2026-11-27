@@ -1,3 +1,5 @@
+import {Button} from "@/components/ui/button";
+import {GraduationCap} from "lucide-react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { LoginCard } from "@/components/portal/LoginCard";
 import { portalSignIn, portalSignOut } from "@/lib/session";
@@ -38,9 +40,7 @@ function AdminLogin() {
       }}
       footer={
         <div className="space-y-3">
-          <Link to="/" className="inline-block text-xs font-semibold text-primary hover:underline">
-            العودة لدخول الطلاب
-          </Link>
+          <Button asChild variant="brand" size="lg" className="h-12 w-full text-base"><Link to="/"><GraduationCap className="h-5 w-5"/>العودة لدخول الطلاب</Link></Button>
           <div className="border-t pt-2">
             <a
               href="https://www.facebook.com/HNU.Helwan"

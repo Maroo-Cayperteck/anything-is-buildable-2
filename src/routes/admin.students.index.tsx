@@ -1,3 +1,4 @@
+import {ScheduleRequests} from "@/components/portal/ScheduleAdmin";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -221,6 +222,7 @@ function AdminStudentsIndex() {
 
   return (
     <div className="space-y-6">
+      <ScheduleRequests/>
       <div className="flex flex-wrap gap-2">
         <Button
           variant={tab === "students" ? "brand" : "outline"}
@@ -422,7 +424,8 @@ function AdminStudentsIndex() {
             <div className="divide-y">
               {requests.map((r) => {
                 const badge = STATUS_AR[r.status] ?? { label: r.status, cls: "bg-muted" };
-                const assign = reqAssign[r.id] ?? { programId: "", levelId: "" };
+                const suggestedLevel=levels.find(l=>l.level_number===r.requested_level);
+                const assign = reqAssign[r.id] ?? { programId: suggestedLevel?.program_id??"", levelId: suggestedLevel?.id??"" };
                 const filteredLevels = assign.programId
                   ? levels.filter((l) => l.program_id === assign.programId)
                   : levels;
@@ -446,7 +449,7 @@ function AdminStudentsIndex() {
                         )}
                       </div>
                       <div className="mt-1 font-mono text-xs text-muted-foreground" dir="ltr">
-                        {r.student_code} · {r.email} {r.phone ? `· ${r.phone}` : ""}
+                        {r.student_code} · المستوى المطلوب: {r.requested_level ?? "غير محدد"} · الترم: {r.requested_term ?? "غير محدد"} {r.phone ? `· ${r.phone}` : ""}
                       </div>
                     </div>
                     {r.status === "pending" && (
@@ -500,7 +503,7 @@ function AdminStudentsIndex() {
                                 },
                               });
                               await refreshAll();
-                              toast.success(`تم اعتماد حساب الطالب ${r.student_code}`);
+                              toast.success(`تم اعتماد حساب الطالب ${r.student_code} — افتح ملفه لاعتماد المواد والجروب`);
                             } catch (err) {
                               toast.error(err instanceof Error ? err.message : "تعذر الاعتماد");
                             }

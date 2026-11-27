@@ -1,0 +1,3 @@
+create or replace function public.resolve_login_email(p_identifier text) returns text language sql security definer set search_path=public as $$ select u.email::text from auth.users u where u.id = coalesce((select p.user_id from public.student_profiles p where lower(p.student_code)=lower(trim(p_identifier)) or lower(p.username)=lower(trim(p_identifier)) limit 1),(select r.auth_user_id from public.registration_requests r where r.student_code=trim(p_identifier) order by r.created_at desc limit 1)) $$;
+revoke all on function public.resolve_login_email(text) from public,anon,authenticated;
+grant execute on function public.resolve_login_email(text) to service_role;

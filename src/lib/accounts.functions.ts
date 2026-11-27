@@ -97,6 +97,83 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
     };
   });
 
+// Student-code registration creates a confirmed internal Auth identity; approval remains mandatory.
+export const registerWithStudentCode = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        studentCode: z
+          .string()
+          .transform(normalizeStudentCode)
+          .pipe(
+            z
+              .string()
+              .regex(/^9252500\d{2}$/, "الرقم الجامعي يجب أن يكون 9 أرقام ويبدأ بـ 9252500"),
+          ),
+        password: z.string().min(8).max(128),
+        fullNameAr: z
+          .string()
+          .trim()
+          .min(5)
+          .max(160)
+          .regex(/[\u0621-\u064A]/, "اكتب الاسم بالعربية"),
+        level: z.number().int().min(0).max(3),
+        term: z.number().int().min(1).max(2),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    const { assertAuthRateLimit } = await import("./supabase-config.server");
+    assertAuthRateLimit("register-code:" + data.studentCode, 3, 3600_000);
+    const [
+      { data: profile, error: pe },
+      { data: request, error: re },
+      { data: roster, error: ro },
+    ] = await Promise.all([
+      db
+        .from("student_profiles")
+        .select("user_id")
+        .eq("student_code", data.studentCode)
+        .maybeSingle(),
+      db.from("registration_requests").select("id").eq("student_code", data.studentCode).limit(1),
+      db
+        .from("student_roster")
+        .select("is_active")
+        .eq("student_code", data.studentCode)
+        .maybeSingle(),
+    ]);
+    if (pe || re || ro) throw new Error("تعذر التحقق من الرقم الجامعي. حاول لاحقًا.");
+    if (profile || request?.length)
+      throw new Error("يوجد حساب أو طلب بهذا الرقم. سجّل الدخول أو راجع المسؤول.");
+    if (roster && !roster.is_active) throw new Error("راجع المسؤول لتفعيل أهلية الرقم الجامعي.");
+    const email = `student${data.studentCode}@hnu-portal.example.com`;
+    const { data: created, error } = await db.auth.admin.createUser({
+      email,
+      password: data.password,
+      email_confirm: true,
+    });
+    if (error || !created.user)
+      throw new Error("تعذر إنشاء الحساب؛ قد يكون الرقم مسجلًا بالفعل. راجع المسؤول.");
+    const { error: insertError } = await db
+      .from("registration_requests")
+      .insert({
+        auth_user_id: created.user.id,
+        student_code: data.studentCode,
+        email,
+        full_name_ar: data.fullNameAr,
+        status: "pending",
+        requested_level: data.level,
+        requested_term: data.term,
+        roster_verified: false,
+      });
+    if (insertError) {
+      await db.auth.admin.deleteUser(created.user.id);
+      throw new Error("تعذر حفظ الطلب. حاول مرة أخرى.");
+    }
+    return { ok: true };
+  });
+
 /**
  * Returns authoritative server-verified roles and student onboarding/account status
  * for the currently authenticated Supabase user using RLS-scoped queries.
