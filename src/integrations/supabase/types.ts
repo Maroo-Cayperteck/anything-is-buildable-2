@@ -671,6 +671,44 @@ export type Database = {
           },
         ]
       }
+      password_reset_requests: {
+        Row: {
+          id: string
+          student_user_id: string
+          requested_at: string
+          handled_at: string | null
+          handled_by: string | null
+          outcome: string | null
+          busy_until: string | null
+        }
+        Insert: {
+          id?: string
+          student_user_id: string
+          requested_at?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          outcome?: string | null
+          busy_until?: string | null
+        }
+        Update: {
+          id?: string
+          student_user_id?: string
+          requested_at?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          outcome?: string | null
+          busy_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "password_reset_requests_student_user_id_fkey"
+            columns: ["student_user_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       personal_plans: {
         Row: {
           items: Json

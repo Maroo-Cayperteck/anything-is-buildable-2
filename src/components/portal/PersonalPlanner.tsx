@@ -5,12 +5,16 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { getPlanningCatalog, saveMyPlan, applyRosterPlan } from "@/lib/planning.functions";
 import { readPlanItems, suggestedCodes, type PlanItem } from "@/lib/planning-utils";
+import { DistributionSelect, distributionFields } from "@/components/portal/DistributionSelect";
+import { findPlanningOffering, fullChoice } from "@/lib/planning-preview";
+import { matchesChoice, type ScheduleChoice } from "@/lib/schedule-utils";
 import { DAYS, KIND_LABEL } from "@/lib/portal-data";
 import type { usePortalSnapshot } from "@/lib/use-profile";
 type Snapshot = NonNullable<ReturnType<typeof usePortalSnapshot>["data"]>;
 type Catalog = Awaited<ReturnType<typeof getPlanningCatalog>>;
 const selectClass = "w-full min-w-0 rounded-lg border bg-background p-2";
-export function PersonalPlanner({ snap }: { snap: Snapshot }) {
+type PlannerProps = { snap: Snapshot; onConfirm?: (() => void) | undefined };
+export function PersonalPlanner({ snap, onConfirm }: PlannerProps) {
   const q = useQuery({ queryKey: ["planning-catalog"], queryFn: () => getPlanningCatalog() });
   if (q.isError)
     return (
@@ -26,11 +30,12 @@ export function PersonalPlanner({ snap }: { snap: Snapshot }) {
         String(q.data.plans.find((p) => p.semester_id === snap.selectedSemester?.id)?.updated_at)
       }
       snap={snap}
+      onConfirm={onConfirm}
       c={q.data}
     />
   );
 }
-function Planner({ snap, c }: { snap: Snapshot; c: Catalog }) {
+function Planner({ snap, c, onConfirm }: PlannerProps & { c: Catalog }) {
   const qc = useQueryClient();
   const semesterId = snap.selectedSemester?.id ?? "";
   const saved = c.plans.find((p) => p.semester_id === semesterId);
@@ -65,12 +70,34 @@ function Planner({ snap, c }: { snap: Snapshot; c: Catalog }) {
         suggestedCodes(c.levels.find((l) => l.id === id)?.level_number ?? 0, term).includes(x.code),
       )
       .map((x) => ({ courseId: x.id, ...distribution }));
-  const setChoice = (key: "group_number" | "section_number" | "lab_number", value: string) => {
-    const next = { ...distribution, [key]: value ? Number(value) : null };
+  const setChoice = (key: keyof ScheduleChoice, value: number | null) => {
+    const next = { ...distribution, [key]: value };
     setDistribution(next);
     setItems((xs) => xs.map((x) => ({ ...x, [key]: next[key] })));
   };
   const refresh = () => qc.invalidateQueries();
+  const programId = c.levels.find((level) => level.id === levelId)?.program_id;
+  const semesterOfferings = c.offerings.filter(
+    (o) => o.semester_id === semesterId && o.program_id === programId,
+  );
+  const levelSlots = c.slots.filter((slot) =>
+    semesterOfferings.some((o) => o.id === slot.offering_id && o.level_id === levelId),
+  );
+  const slotsForItem = (item: PlanItem) => {
+    const offering = findPlanningOffering(semesterOfferings, item, levelId);
+    return c.slots.filter((slot) => slot.offering_id === offering?.id);
+  };
+  const draft = onConfirm
+    ? items.flatMap((item) =>
+        slotsForItem(item)
+          .filter((slot) => matchesChoice(slot, fullChoice(item)))
+          .map((slot) => ({
+            ...slot,
+            course: c.courses.find((course) => course.id === item.courseId),
+          })),
+      )
+    : [];
+  const firstDay = DAYS.find(([day]) => draft.some((slot) => slot.day_of_week === day));
   const masterOfferings = c.offerings.filter(
     (o) => o.semester_id === semesterId && o.level_id === masterLevel,
   );
@@ -83,11 +110,21 @@ function Planner({ snap, c }: { snap: Snapshot; c: Catalog }) {
     );
   return (
     <div className="space-y-4">
+      {onConfirm && (
+        <header>
+          <h2 className="text-2xl font-bold">راجع أول جدول ليك</h2>
+          <p className="text-sm text-muted-foreground">
+            {snap.selectedSemester?.name_ar} · راجع المواد والتوزيع، وبعدها اضغط «ده جدولي».
+          </p>
+        </header>
+      )}
       <details
         className="rounded-xl border bg-card p-4"
-        open={snap.enrollments.length === 0 || !snap.timetable.length}
+        open={!!onConfirm || snap.enrollments.length === 0 || !snap.timetable.length}
       >
-        <summary className="cursor-pointer font-bold">اختيار موادي والجروب والسيكشن واللاب</summary>
+        <summary className="cursor-pointer font-bold">
+          {onConfirm ? "المواد المقترحة والتوزيع" : "اختيار موادي والجروب والسيكشن واللاب"}
+        </summary>
         <div className="space-y-4 pt-4">
           <p className="text-sm text-muted-foreground">
             عدّل توزيعك وقت ما تحتاج. تغيير الجروب يجلب مواعيده تلقائيًا، وتقدر تخصص كل مادة. بيانات
@@ -129,34 +166,20 @@ function Planner({ snap, c }: { snap: Snapshot; c: Catalog }) {
             </Button>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {(
-              [
-                ["group_number", "الجروب", 20],
-                ["section_number", "السيكشن", 30],
-                ["lab_number", "اللاب", 30],
-              ] as const
-            ).map(([key, label, max]) => (
-              <label key={key}>
-                {label}
-                <select
-                  aria-label={label + " لكل المواد"}
-                  className={selectClass}
-                  value={distribution[key] ?? ""}
-                  onChange={(e) => setChoice(key, e.target.value)}
-                >
-                  <option value="">لا أعرف</option>
-                  {Array.from({ length: max }, (_, i) => (
-                    <option value={i + 1} key={i}>
-                      {i + 1}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            {distributionFields.map((field) => (
+              <DistributionSelect
+                key={field[0]}
+                field={field}
+                slots={levelSlots}
+                choice={distribution}
+                name={field[1] + " لكل المواد"}
+                onChange={(value) => setChoice(field[0], value)}
+              />
             ))}
           </div>
           <p className="text-xs text-muted-foreground">
-            «لا أعرف» لا يفترض مجموعة. استخدم الجدول الأساسي بالأسفل لمعرفة الخيارات. لا تستخدم
-            اقتراحات المواد كدليل نجاح في متطلب سابق.
+            الاختيارات من مواعيد المستوى والترم. لو مش عارف توزيعك اختَر «لا أعرف»، ولو رقمك مش ظاهر
+            اختَر «اختيار مخصص».
           </p>
           {mode === "custom" && (
             <>
@@ -212,36 +235,21 @@ function Planner({ snap, c }: { snap: Snapshot; c: Catalog }) {
                   <details className="mt-2 text-sm">
                     <summary className="cursor-pointer">توزيع مختلف لهذه المادة</summary>
                     <div className="grid grid-cols-3 gap-2 pt-2">
-                      {(
-                        [
-                          ["group_number", "جروب"],
-                          ["section_number", "سيكشن"],
-                          ["lab_number", "لاب"],
-                        ] as const
-                      ).map(([key, label]) => (
-                        <label key={key}>
-                          {label}
-                          <input
-                            aria-label={`${label} ${course?.code}`}
-                            type="number"
-                            min={1}
-                            max={key === "group_number" ? 20 : 30}
-                            className={selectClass}
-                            value={item[key] ?? ""}
-                            onChange={(e) =>
-                              setItems((xs) =>
-                                xs.map((x) =>
-                                  x.courseId === item.courseId
-                                    ? {
-                                        ...x,
-                                        [key]: e.target.value ? Number(e.target.value) : null,
-                                      }
-                                    : x,
-                                ),
-                              )
-                            }
-                          />
-                        </label>
+                      {distributionFields.map((field) => (
+                        <DistributionSelect
+                          key={field[0]}
+                          field={field}
+                          slots={slotsForItem(item)}
+                          choice={fullChoice(item)}
+                          name={field[1] + " " + (course?.code ?? "")}
+                          onChange={(value) =>
+                            setItems((xs) =>
+                              xs.map((x) =>
+                                x.courseId === item.courseId ? { ...x, [field[0]]: value } : x,
+                              ),
+                            )
+                          }
+                        />
                       ))}
                     </div>
                   </details>
@@ -249,6 +257,35 @@ function Planner({ snap, c }: { snap: Snapshot; c: Catalog }) {
               );
             })}
           </ul>
+          {onConfirm && (
+            <section
+              className="rounded-lg border bg-muted/40 p-3 space-y-2"
+              aria-label="معاينة أول يوم"
+            >
+              <h3 className="font-bold">أول يوم في الجدول{firstDay ? " · " + firstDay[1] : ""}</h3>
+              {firstDay ? (
+                draft
+                  .filter((slot) => slot.day_of_week === firstDay[0])
+                  .sort((a, b) => a.start_time.localeCompare(b.start_time))
+                  .map((slot) => (
+                    <p key={slot.id} className="text-sm">
+                      <bdi>
+                        {slot.course?.code} — {slot.course?.name}
+                      </bdi>{" "}
+                      · {KIND_LABEL[slot.kind]} ·{" "}
+                      <bdi>
+                        {slot.start_time.slice(0, 5)}–{slot.end_time.slice(0, 5)}
+                      </bdi>{" "}
+                      · {slot.location}
+                    </p>
+                  ))
+              ) : (
+                <p className="text-sm">
+                  مفيش مواعيد مطابقة لسه. اختَر التوزيع أو كمّل وراجعه بعدين.
+                </p>
+              )}
+            </section>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button
               variant="brand"
@@ -259,6 +296,7 @@ function Planner({ snap, c }: { snap: Snapshot; c: Catalog }) {
                   await saveMyPlan({ data: { levelId, semesterId, items } });
                   await refresh();
                   toast.success("اتحفظت موادك وتوزيعك");
+                  onConfirm?.();
                 } catch (e) {
                   toast.error(e instanceof Error ? e.message : "تعذر الحفظ");
                 } finally {
@@ -266,48 +304,52 @@ function Planner({ snap, c }: { snap: Snapshot; c: Catalog }) {
                 }
               }}
             >
-              حفظ موادي وتوزيعي
+              {onConfirm ? "ده جدولي" : "حفظ موادي وتوزيعي"}
             </Button>
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={async () => {
-                setBusy(true);
-                try {
-                  const result = await applyRosterPlan({ data: { semesterId } });
-                  if (!result[0]?.ok) throw new Error(result[0]?.message);
-                  await refresh();
-                  toast.success("تم تطبيق توزيع الكشف");
-                } catch (e) {
-                  toast.error(e instanceof Error ? e.message : "تعذر تحميل الكشف");
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              استخدام توزيع كشف المسؤول
-            </Button>
+            {!onConfirm && (
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    const result = await applyRosterPlan({ data: { semesterId } });
+                    if (!result[0]?.ok) throw new Error(result[0]?.message);
+                    await refresh();
+                    toast.success("تم تطبيق توزيع الكشف");
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "تعذر تحميل الكشف");
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                استخدام توزيع كشف المسؤول
+              </Button>
+            )}
           </div>
         </div>
       </details>
-      <Button
-        variant="outline"
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          try {
-            await resetMyPlan({ data: { semesterId } });
-            await refresh();
-            toast.success("تم الرجوع لخطة المسؤول");
-          } catch (e) {
-            toast.error(e instanceof Error ? e.message : "تعذر الرجوع");
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        الرجوع لمواد وتوزيع المسؤول إن وُجد
-      </Button>
+      {!onConfirm && (
+        <Button
+          variant="outline"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await resetMyPlan({ data: { semesterId } });
+              await refresh();
+              toast.success("تم الرجوع لخطة المسؤول");
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "تعذر الرجوع");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          الرجوع لمواد وتوزيع المسؤول إن وُجد
+        </Button>
+      )}
       <details className="rounded-xl border bg-card p-4">
         <summary className="cursor-pointer font-bold">الجدول الأساسي الكامل — كل المجموعات</summary>
         <label className="block mt-3">

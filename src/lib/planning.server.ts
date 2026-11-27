@@ -1,5 +1,6 @@
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { readPlanItems, suggestedCodes, type PlanItem } from "./planning-utils";
+import { findPlanningOffering } from "./planning-preview";
 export async function persistPersonalPlan(
   userId: string,
   levelId: string,
@@ -30,9 +31,7 @@ export async function persistPersonalPlan(
   const prepared: PlanItem[] = [];
   for (const item of items) {
     // Prefer the course's existing level so repeaters use its actual timetable.
-    let off =
-      offerings.find((x) => x.course_id === item.courseId && x.level_id === levelId) ??
-      offerings.find((x) => x.course_id === item.courseId);
+    let off = findPlanningOffering(offerings, item, levelId);
     if (!off) {
       const created = await db
         .from("course_offerings")

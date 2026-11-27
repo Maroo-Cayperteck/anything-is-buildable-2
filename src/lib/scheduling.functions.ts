@@ -261,23 +261,8 @@ export const adminResetStudentPassword = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { requireAdminServer, logAdminActivity } = await import("./auth.server");
     await requireAdminServer(context.userId);
-    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-    const { data: roles, error: rerr } = await db
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.studentId);
-    if (rerr || roles?.some((r) => r.role === "admin"))
-      throw new Error("هذه الأداة لحسابات الطلاب فقط");
-    const { data: p } = await db
-      .from("student_profiles")
-      .select("student_code")
-      .eq("user_id", data.studentId)
-      .maybeSingle();
-    if (!p?.student_code) throw new Error("ملف الطالب غير موجود");
-    const { error } = await db.auth.admin.updateUserById(data.studentId, {
-      password: data.password,
-    });
-    if (error) throw new Error("تعذر تغيير كلمة المرور");
+    const { replaceStudentPassword } = await import("./password-recovery.server");
+    await replaceStudentPassword(data.studentId, data.password);
     await logAdminActivity({
       actorUserId: context.userId,
       action: "reset_student_password",

@@ -8,6 +8,7 @@ describe("App routing", () => {
   const routes = [
     "/",
     "/register",
+    "/forgot-password",
     "/auth/callback",
     "/admin-login",
     "/portal",
@@ -25,6 +26,7 @@ describe("App routing", () => {
     "/admin/documents",
     "/admin/events",
     "/admin/logs",
+    "/admin/password-requests",
   ];
 
   for (const path of routes) {

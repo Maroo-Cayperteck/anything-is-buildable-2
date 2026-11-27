@@ -6,12 +6,17 @@ import { DAYS, KIND_LABEL } from "@/lib/portal-data";
 import { overlappingSlots } from "@/lib/schedule-utils";
 import { PersonalPlanner } from "@/components/portal/PersonalPlanner";
 import { ScheduleTools } from "@/components/portal/ScheduleTools";
+import { ConflictAlternatives } from "@/components/portal/ConflictAlternatives";
 import { LectureReminders } from "@/components/portal/LectureReminders";
 export const Route = createFileRoute("/portal/registration")({
+  validateSearch: (search: Record<string, unknown>): { review?: boolean } =>
+    search["review"] === true ? { review: true } : {},
   component: Registration,
   head: () => ({ meta: [{ title: "جدولي وموادي — بوابة الطالب" }] }),
 });
 function Registration() {
+  const { review } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [semesterId, setSemester] = useState<string>(),
     [base, setBase] = useState(false);
   const { data: snap, isLoading, isError, refetch } = usePortalSnapshot(semesterId);
@@ -23,6 +28,14 @@ function Registration() {
         <Button onClick={() => refetch()}>إعادة المحاولة</Button>
       </div>
     );
+  if (review) {
+    return (
+      <PersonalPlanner
+        snap={snap}
+        onConfirm={() => void navigate({ to: "/portal/registration", search: {}, replace: true })}
+      />
+    );
+  }
   const slots = base ? snap.baseTimetable : snap.timetable;
   const conflicts = overlappingSlots(slots);
   const missing = snap.enrollments.filter((e) => !e.lectures.length);
@@ -75,10 +88,8 @@ function Registration() {
             الجدول الأساسي؛ لن نخترع مواعيد غير منشورة.
           </p>
         )}
-        {!!conflicts.length && (
-          <p role="alert" className="text-destructive text-sm mb-3">
-            يوجد {conflicts.length} تعارض في هذا الجدول. تستطيع حفظ اختياراتك ومراجعة الأوقات بنفسك.
-          </p>
+        {conflicts.length > 0 && (
+          <ConflictAlternatives snap={snap} slots={slots} conflicts={conflicts} />
         )}
         {!slots.length ? (
           <p className="py-5 text-muted-foreground">

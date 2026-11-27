@@ -31,7 +31,9 @@ function Register() {
               تُستكمل لاحقًا.
             </p>
             <Button asChild variant="brand">
-              <Link to="/">تسجيل الدخول</Link>
+              <Link to="/" search={{ review: true }}>
+                تسجيل الدخول ومراجعة جدولي
+              </Link>
             </Button>
           </div>
         ) : (
@@ -54,14 +56,16 @@ function Register() {
                     fullNameAr: String(f.get("name")),
                     level: Number(f.get("level")),
                     term: Number(f.get("term")),
-                    group: f.get("group") ? Number(f.get("group")) : null,
-                    section: f.get("section") ? Number(f.get("section")) : null,
-                    lab: f.get("lab") ? Number(f.get("lab")) : null,
                   },
                 });
                 setDone(true);
                 const login = await portalSignIn(String(f.get("code")), String(f.get("password")));
-                if (!login.error) await navigate({ to: "/portal/registration" });
+                if (!login.error)
+                  await navigate({
+                    to: "/portal/registration",
+                    search: { review: true },
+                    replace: true,
+                  });
               } catch (err) {
                 setError(err instanceof Error ? err.message : "تعذر إنشاء الحساب");
               } finally {
@@ -115,32 +119,8 @@ function Register() {
               المستوى حسب اللائحة: Level 0 إعدادي، ثم Level 1 و2 و3. المواد الإلزامية تُقترح
               تلقائيًا ويمكنك تعديلها وتغيير توزيعك بنفسك.
             </p>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                ["group", "الجروب", 3],
-                ["section", "السيكشن", 7],
-                ["lab", "اللاب", 7],
-              ].map(([key, label, max]) => (
-                <label key={String(key)}>
-                  {label}
-                  <select
-                    aria-label={String(label)}
-                    name={String(key)}
-                    className="w-full border rounded-lg p-2"
-                  >
-                    <option value="">لا أعرف</option>
-                    {Array.from({ length: Number(max) }, (_, i) => (
-                      <option key={i} value={i + 1}>
-                        {i + 1}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              لو مش عارف توزيعك، شاهد الجدول الأساسي بعد الدخول وحدده لاحقًا. لن نفترض مجموعة بدلًا
-              منك.
+            <p className="text-sm text-muted-foreground">
+              بعد إنشاء الحساب، راجع المواد واختر مجموعتك من المواعيد المنشورة.
             </p>
             <label className="block">
               كلمة المرور
@@ -176,9 +156,9 @@ function Register() {
               <UserPlus className="h-4 w-4" />
               {busy ? "جارٍ الإرسال…" : "إنشاء حساب وفتح جدولي"}
             </Button>
-            <p className="text-xs text-muted-foreground">
-              نسيت كلمة المرور؟ تواصل مع المسؤول لإعادة تعيينها بعد التحقق من هويتك.
-            </p>
+            <Link to="/forgot-password" className="block text-center text-primary text-sm">
+              نسيت كلمة المرور؟
+            </Link>
             <Link to="/" className="block text-center text-primary text-sm">
               لدي حساب — تسجيل الدخول
             </Link>

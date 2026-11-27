@@ -129,6 +129,71 @@ describe.skipIf(process.env["RUN_PORTAL_INTEGRATION"] !== "1")(
           .limit(1)
           .single();
         const admin = { userId: adminRow.data!.user_id, supabase: db };
+        const { requestPasswordReset, getPasswordResetRequests, handlePasswordResetRequest } =
+          await import("@/lib/password-recovery.functions");
+        const recovery = await Promise.all([
+          call(requestPasswordReset, { code }),
+          call(requestPasswordReset, { code }),
+          call(requestPasswordReset, { code: "000000000" }),
+        ]);
+        expect(recovery).toEqual([{ ok: true }, { ok: true }, { ok: true }]);
+        expect((await client.from("password_reset_requests").select("id")).error).not.toBeNull();
+        await expect(call(getPasswordResetRequests, undefined, student)).rejects.toThrow(
+          "Forbidden",
+        );
+        const pending = await db
+          .from("password_reset_requests")
+          .select("id")
+          .eq("student_user_id", uid!);
+        expect(pending.error).toBeNull();
+        expect(pending.data).toHaveLength(1);
+        const resetId = pending.data![0]!.id;
+        const passwordResetInput = {
+          id: resetId,
+          outcome: "reset",
+          verifiedIdentity: true,
+          password: randomUUID() + "Aa1!",
+        };
+        await expect(
+          call(
+            handlePasswordResetRequest,
+            { ...passwordResetInput, verifiedIdentity: false },
+            admin,
+          ),
+        ).rejects.toThrow();
+        expect(
+          (await call(getPasswordResetRequests, undefined, admin)).some(
+            (row: { id: string }) => row.id === resetId,
+          ),
+        ).toBe(true);
+        await expect(call(handlePasswordResetRequest, passwordResetInput, student)).rejects.toThrow(
+          "Forbidden",
+        );
+        const attempts = await Promise.allSettled([
+          call(handlePasswordResetRequest, passwordResetInput, admin),
+          call(handlePasswordResetRequest, passwordResetInput, admin),
+        ]);
+        expect(attempts.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+        const freshLogin = await call(signInWithIdentifier, {
+          identifier: code,
+          password: passwordResetInput.password,
+        });
+        expect(freshLogin.ok).toBe(true);
+        expect(
+          (
+            await client.auth.setSession({
+              access_token: freshLogin.accessToken,
+              refresh_token: freshLogin.refreshToken,
+            })
+          ).error,
+        ).toBeNull();
+        const oldLogin = await call(signInWithIdentifier, { identifier: code, password });
+        expect(oldLogin.ok).toBe(false);
+        expect(
+          (await db.from("password_reset_requests").select("outcome").eq("id", resetId).single())
+            .data?.outcome,
+        ).toBe("reset");
+
         const level = await db.from("academic_levels").select("*").eq("level_number", 1).single(),
           sem = await db.from("semesters").select("*").eq("is_current", true).single();
         testSemester = sem.data!.id;

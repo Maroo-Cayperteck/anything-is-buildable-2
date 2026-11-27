@@ -22,11 +22,14 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { review?: boolean } =>
+    search["review"] === true ? { review: true } : {},
   component: Login,
 });
 
 function Login() {
   const navigate = useNavigate();
+  const { review } = Route.useSearch();
   useEffect(() => {
     let active = true;
     void supabase.auth
@@ -34,17 +37,19 @@ function Login() {
       .then(async ({ data }) => {
         if (!data.session) return;
         const status = await getAuthAccountStatus();
-        if (active && (status.roles.includes("admin") || status.accountStatus === "active"))
-          void navigate({
-            to: status.roles.includes("admin") ? "/admin" : "/portal",
-            replace: true,
-          });
+        if (!active) return;
+        if (status.roles.includes("admin")) void navigate({ to: "/admin", replace: true });
+        else if (status.accountStatus === "active") {
+          if (review)
+            void navigate({ to: "/portal/registration", search: { review: true }, replace: true });
+          else void navigate({ to: "/portal", replace: true });
+        }
       })
       .catch(() => {});
     return () => {
       active = false;
     };
-  }, [navigate]);
+  }, [navigate, review]);
 
   return (
     <LoginCard
@@ -56,7 +61,10 @@ function Login() {
         const { error, role } = await portalSignIn(u, p);
         if (error) return error;
 
-        navigate({ to: role === "admin" ? "/admin" : "/portal", replace: true });
+        if (role === "admin") void navigate({ to: "/admin", replace: true });
+        else if (review)
+          void navigate({ to: "/portal/registration", search: { review: true }, replace: true });
+        else void navigate({ to: "/portal", replace: true });
         return null;
       }}
       footer={
@@ -73,6 +81,12 @@ function Login() {
               Student Information System
             </div>
           </a>
+          <Link
+            to="/forgot-password"
+            className="inline-block text-sm font-semibold text-primary hover:underline"
+          >
+            نسيت كلمة المرور؟
+          </Link>
           <div className="space-y-2 pt-1">
             <Button asChild variant="brand" size="lg" className="h-12 w-full text-base">
               <Link to="/admin-login">دخول المسؤول</Link>

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminLoginRouteImport } from './routes/admin-login'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -19,6 +20,7 @@ import { Route as AdminAcademicRouteImport } from './routes/admin.academic'
 import { Route as AdminDocumentsRouteImport } from './routes/admin.documents'
 import { Route as AdminEventsRouteImport } from './routes/admin.events'
 import { Route as AdminLogsRouteImport } from './routes/admin.logs'
+import { Route as AdminPasswordRequestsRouteImport } from './routes/admin.password-requests'
 import { Route as AdminStudentsRouteImport } from './routes/admin.students'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
@@ -45,6 +47,11 @@ const AdminRoute = AdminRouteImport.update({
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin-login',
   path: '/admin-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalRoute = PortalRouteImport.update({
@@ -80,6 +87,11 @@ const AdminEventsRoute = AdminEventsRouteImport.update({
 const AdminLogsRoute = AdminLogsRouteImport.update({
   id: '/logs',
   path: '/logs',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPasswordRequestsRoute = AdminPasswordRequestsRouteImport.update({
+  id: '/password-requests',
+  path: '/password-requests',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminStudentsRoute = AdminStudentsRouteImport.update({
@@ -147,12 +159,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/portal': typeof PortalRouteWithChildren
   '/register': typeof RegisterRoute
   '/admin/academic': typeof AdminAcademicRoute
   '/admin/documents': typeof AdminDocumentsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/logs': typeof AdminLogsRoute
+  '/admin/password-requests': typeof AdminPasswordRequestsRoute
   '/admin/students': typeof AdminStudentsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/portal/courses': typeof PortalCoursesRoute
@@ -170,11 +184,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin-login': typeof AdminLoginRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/register': typeof RegisterRoute
   '/admin/academic': typeof AdminAcademicRoute
   '/admin/documents': typeof AdminDocumentsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/logs': typeof AdminLogsRoute
+  '/admin/password-requests': typeof AdminPasswordRequestsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/portal/courses': typeof PortalCoursesRoute
   '/portal/documents': typeof PortalDocumentsRoute
@@ -193,12 +209,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin-login': typeof AdminLoginRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/portal': typeof PortalRouteWithChildren
   '/register': typeof RegisterRoute
   '/admin/academic': typeof AdminAcademicRoute
   '/admin/documents': typeof AdminDocumentsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/logs': typeof AdminLogsRoute
+  '/admin/password-requests': typeof AdminPasswordRequestsRoute
   '/admin/students': typeof AdminStudentsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/portal/courses': typeof PortalCoursesRoute
@@ -219,12 +237,14 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-login'
+    | '/forgot-password'
     | '/portal'
     | '/register'
     | '/admin/academic'
     | '/admin/documents'
     | '/admin/events'
     | '/admin/logs'
+    | '/admin/password-requests'
     | '/admin/students'
     | '/auth/callback'
     | '/portal/courses'
@@ -242,11 +262,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin-login'
+    | '/forgot-password'
     | '/register'
     | '/admin/academic'
     | '/admin/documents'
     | '/admin/events'
     | '/admin/logs'
+    | '/admin/password-requests'
     | '/auth/callback'
     | '/portal/courses'
     | '/portal/documents'
@@ -264,12 +286,14 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-login'
+    | '/forgot-password'
     | '/portal'
     | '/register'
     | '/admin/academic'
     | '/admin/documents'
     | '/admin/events'
     | '/admin/logs'
+    | '/admin/password-requests'
     | '/admin/students'
     | '/auth/callback'
     | '/portal/courses'
@@ -289,6 +313,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AdminLoginRoute: typeof AdminLoginRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   PortalRoute: typeof PortalRouteWithChildren
   RegisterRoute: typeof RegisterRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -315,6 +340,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-login'
       fullPath: '/admin-login'
       preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal': {
@@ -364,6 +396,13 @@ declare module '@tanstack/react-router' {
       path: '/logs'
       fullPath: '/admin/logs'
       preLoaderRoute: typeof AdminLogsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/password-requests': {
+      id: '/admin/password-requests'
+      path: '/password-requests'
+      fullPath: '/admin/password-requests'
+      preLoaderRoute: typeof AdminPasswordRequestsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/students': {
@@ -472,6 +511,7 @@ interface AdminRouteChildren {
   AdminDocumentsRoute: typeof AdminDocumentsRoute
   AdminEventsRoute: typeof AdminEventsRoute
   AdminLogsRoute: typeof AdminLogsRoute
+  AdminPasswordRequestsRoute: typeof AdminPasswordRequestsRoute
   AdminStudentsRoute: typeof AdminStudentsRouteWithChildren
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -481,6 +521,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDocumentsRoute: AdminDocumentsRoute,
   AdminEventsRoute: AdminEventsRoute,
   AdminLogsRoute: AdminLogsRoute,
+  AdminPasswordRequestsRoute: AdminPasswordRequestsRoute,
   AdminStudentsRoute: AdminStudentsRouteWithChildren,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -516,6 +557,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AdminLoginRoute: AdminLoginRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   PortalRoute: PortalRouteWithChildren,
   RegisterRoute: RegisterRoute,
   AuthCallbackRoute: AuthCallbackRoute,
