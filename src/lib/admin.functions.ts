@@ -54,7 +54,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("student_profiles")
         .select("*", { count: "exact", head: true })
-        .eq("account_status", "active"),
+        .eq("account_status", "active").not("student_code", "is", null),
       supabaseAdmin
         .from("registration_requests")
         .select("*", { count: "exact", head: true })
@@ -62,7 +62,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("student_profiles")
         .select("*", { count: "exact", head: true })
-        .eq("account_status", "suspended"),
+        .eq("account_status", "suspended").not("student_code", "is", null),
       supabaseAdmin.from("academic_programs").select("*", { count: "exact", head: true }),
       supabaseAdmin
         .from("semesters")

@@ -228,6 +228,11 @@ export const getStudentPortalSnapshot = createServerFn({ method: "GET" })
       }),
     );
 
+    const weekdayOrder = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+    timetableSlots.sort((a, b) =>
+      weekdayOrder.indexOf(a.day) - weekdayOrder.indexOf(b.day) ||
+      a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes,
+    );
     const targetedAnnouncements = announcements.filter((a) => matchesStudentAudience(a, student));
     const targetedEvents = events.filter((ev) => matchesStudentAudience(ev, student));
 
