@@ -50,7 +50,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       { count: upcomingEvents, error: e10 },
       { data: recentLogs, error: e11 },
     ] = await Promise.all([
-      supabaseAdmin.from("student_profiles").select("*", { count: "exact", head: true }),
+      supabaseAdmin.from("student_profiles").select("*", { count: "exact", head: true }).not("student_code", "is", null),
       supabaseAdmin
         .from("student_profiles")
         .select("*", { count: "exact", head: true })
@@ -367,7 +367,7 @@ export const listAdminStudents = createServerFn({ method: "GET" })
     const { requireAdminServer } = await import("./auth.server");
     await requireAdminServer(context.userId);
 
-    let query = supabaseAdmin.from("student_profiles").select("*", { count: "exact" });
+    let query = supabaseAdmin.from("student_profiles").select("*", { count: "exact" }).not("student_code", "is", null);
     if (data.programId) query = query.eq("program_id", data.programId);
     if (data.levelId) query = query.eq("level_id", data.levelId);
     if (data.academicYearId) query = query.eq("academic_year_id", data.academicYearId);
